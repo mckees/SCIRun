@@ -30,6 +30,8 @@ DEALINGS IN THE SOFTWARE.
 #include <Core/Algorithms/Field/InterfaceWithCleaver2Algorithm.h>
 #include <Core/Algorithms/Field/InterfaceWithCleaverAlgorithm.h>
 #include <Core/Algorithms/Base/AlgorithmVariableNames.h>
+#include <Core⁩/⁨Algorithms⁩/⁨Legacy⁩/⁨Fields⁩/⁨Mapping/MapFieldDataFromElemToNode.h⁩>
+#include <Core⁩/⁨Algorithms⁩/⁨Legacy⁩/⁨Fields⁩/⁨FieldData/ConvertFieldDataType.h⁩>
 
 #include <cleaver2/vec3.h>
 #include <cleaver2/BoundingBox.h>
@@ -51,7 +53,7 @@ DEALINGS IN THE SOFTWARE.
 #include <Core/Utils/StringUtil.h>
 #include <boost/scoped_ptr.hpp>
 #include <Core/Logging/Log.h>
-#include <Core/Math/MiscMath.h>
+#include <Core/Math/MiscMath.h>‎⁨
 
 using namespace SCIRun;
 using namespace SCIRun::Core;
@@ -247,14 +249,14 @@ namespace detail
           x_ = dims[0]; y_ = dims[1]; z_ = dims[2];
           if (x_ < 1 || y_ < 1 || z_ < 1)
           {
-            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, " Size of input fields should be non-zero !");
+            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, " Size of input fields should be non-zero!");
           }
         }
         else
         {
           if (dims[0] != x_ || dims[1] != y_ || dims[2] != z_)
           {
-            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, " Size of input fields is inconsistent !");
+            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, " Size of input fields is inconsistent!");
           }
         }
 
@@ -266,9 +268,14 @@ namespace detail
         //0 = constant, 1 = linear
         if (1 != vfield1->basis_order())
         {
+          //call algorith to convert basis -
+          //warning message instead of error
           THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Input data need to be defined on input mesh nodes.");
         }
 
+
+        //if it's double, convert to float
+        //convert it all to float!
         if (vfield1->is_float())
         {
           auto ptr = static_cast<float*>(vfield1->fdata_pointer());
