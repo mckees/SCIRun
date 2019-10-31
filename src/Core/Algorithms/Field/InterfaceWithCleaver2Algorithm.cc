@@ -30,7 +30,7 @@ DEALINGS IN THE SOFTWARE.
 #include <Core/Algorithms/Field/InterfaceWithCleaver2Algorithm.h>
 #include <Core/Algorithms/Field/InterfaceWithCleaverAlgorithm.h>
 #include <Core/Algorithms/Base/AlgorithmVariableNames.h>
-#include <Core⁩/⁨Algorithms⁩/⁨Legacy⁩/⁨Fields⁩/⁨Mapping/MapFieldDataFromElemToNode.h⁩>
+#include <Core⁩/⁨Algorithms⁩/⁨Legacy⁩/⁨Fields⁩/FieldData/ConvertFieldBasisType.h⁩>
 #include <Core⁩/⁨Algorithms⁩/⁨Legacy⁩/⁨Fields⁩/⁨FieldData/ConvertFieldDataType.h⁩>
 
 #include <cleaver2/vec3.h>
@@ -268,9 +268,14 @@ namespace detail
         //0 = constant, 1 = linear
         if (1 != vfield1->basis_order())
         {
-          //call algorith to convert basis -
-          //warning message instead of error
-          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Input data need to be defined on input mesh nodes.");
+          FieldHandle output;
+          ConvertFieldBasisTypeAlgo convertAlgo;
+          bool return = convertAlgo.runImpl(input, output);
+          if (!return)
+          {
+            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Conversion failed!"")
+          }
+          
         }
 
 
