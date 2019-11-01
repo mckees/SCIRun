@@ -266,21 +266,20 @@ namespace detail
         }
 
         //0 = constant, 1 = linear
+        //If data is on the elements, map it onto the nodes.
         if (1 != vfield1->basis_order())
         {
           FieldHandle output;
-          ConvertFieldBasisTypeAlgo convertAlgo;
-          bool return = convertAlgo.runImpl(input, output);
-          if (!return)
+          ConvertFieldBasisTypeAlgo convertBasisAlgo;
+          bool returnBasis = convertBasisAlgo.runImpl(input, output);
+          if (!returnBasis)
           {
-            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Conversion failed!"")
+            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Element to node conversion failed!"")
           }
-          
+          //make a new variable for an updated field
         }
 
-
-        //if it's double, convert to float
-        //convert it all to float!
+        //convert all datatypes to float
         if (vfield1->is_float())
         {
           auto ptr = static_cast<float*>(vfield1->fdata_pointer());
@@ -295,7 +294,14 @@ namespace detail
         }
         else
         {
-          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Input field needs to be a structured mesh (best would be a LatVol) with float values defined on mesh nodes. ");
+          FieldHandle output;
+          ConvertFieldDataTypeAlgo convertTypeAlgo("float");
+          bool returnType = convertTypeAlgo.runImpl(input, output);
+          if (!returnBasis)
+          {
+            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Data type conversion failed!")
+          }
+          //make a new variable for an updated field
         }
       }
     }
