@@ -226,6 +226,19 @@ namespace detail
       x_ = y_ = z_ = 0;
     }
 
+    void nullPtrCheck(FieldHandle input)
+    {
+      auto ptr = static_cast<float*>(input->vfield()->fdata_pointer());
+      if (ptr)
+      {
+        return makeCleaver2FieldFromLatVol(input);
+      }
+      else
+      {
+        THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Field is NULL pointer");
+      }
+    }
+
     CleaverScalarField convertToCleaverFormat(FieldHandle input)
     {
       VMesh::dimension_type dims;
@@ -249,14 +262,14 @@ namespace detail
           x_ = dims[0]; y_ = dims[1]; z_ = dims[2];
           if (x_ < 1 || y_ < 1 || z_ < 1)
           {
-            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, " Size of input fields should be non-zero!");
+            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Size of input fields should be non-zero!");
           }
         }
         else
         {
           if (dims[0] != x_ || dims[1] != y_ || dims[2] != z_)
           {
-            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, " Size of input fields is inconsistent!");
+            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Size of input fields is inconsistent!");
           }
         }
 
@@ -266,7 +279,7 @@ namespace detail
         }
 
         //0 = constant, 1 = linear
-        //If data is on the elements, map it onto the nodes.
+        //if data is on the elements, map it onto the nodes.
         if (1 != vfield1->basis_order())
         {
           FieldHandle output;
@@ -274,35 +287,41 @@ namespace detail
           bool returnBasis = convertBasisAlgo.runImpl(input, output);
           if (!returnBasis)
           {
-            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Element to node conversion failed!"")
-          }
-          //make a new variable for an updated field
-        }
-
-        //convert all datatypes to float
-        if (vfield1->is_float())
-        {
-          auto ptr = static_cast<float*>(vfield1->fdata_pointer());
-          if (ptr)
-          {
-            return makeCleaver2FieldFromLatVol(input);
+            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Element to node conversion failed!");
           }
           else
           {
-            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "float field is NULL pointer");
+            algo_->warning("Data was mapped onto the nodes.");
+            vfield1 = output->vfield();
+            //update input variable... set field?
           }
+
         }
-        else
+
+        //convert all datatypes to float
+        if(!vfield1->is_float())
         {
           FieldHandle output;
-          ConvertFieldDataTypeAlgo convertTypeAlgo("float");
+          ConvertFieldDataTypeAlgo convertTypeAlgo;
+          convertTypeAlgo.setOption(Parameters::FieldDatatype, "float");
           bool returnType = convertTypeAlgo.runImpl(input, output);
           if (!returnBasis)
           {
             THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Data type conversion failed!")
           }
-          //make a new variable for an updated field
+          else
+          {
+            algo_->warning("Data was converted to float.");
+            auto vfield1 = output->vfield();
+            input->vfield() = vfield1;
+            //update input variable.. set field?
+          }
         }
+        else
+        {
+          nullPtrCheck();
+        }
+
       }
     }
 
