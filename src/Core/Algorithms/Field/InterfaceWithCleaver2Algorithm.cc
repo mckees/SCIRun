@@ -292,8 +292,8 @@ namespace detail
           else
           {
             algo_->warning("Data was mapped onto the nodes.");
-            vfield1 = output->vfield();
-            //update input variable... set field?
+            input = output;
+            auto vfield1 = input->vfield();
           }
 
         }
@@ -312,9 +312,8 @@ namespace detail
           else
           {
             algo_->warning("Data was converted to float.");
-            auto vfield1 = output->vfield();
-            input->vfield() = vfield1;
-            //update input variable.. set field?
+            input = output;
+            auto vfield1 = input->vfield();
           }
         }
         else
