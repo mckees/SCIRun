@@ -226,7 +226,7 @@ namespace detail
       x_ = y_ = z_ = 0;
     }
 
-      static CleaverScalarField nullPtrCheck(FieldHandle input, const AlgorithmBase* algo_)
+    static CleaverScalarField nullPtrCheck(FieldHandle input, const AlgorithmBase* algo_)
     {
       auto ptr = static_cast<float*>(input->vfield()->fdata_pointer());
       if (ptr)
@@ -318,7 +318,8 @@ namespace detail
         }
         else
         {
-          nullPtrCheck(input, algo_);
+          auto cleaver_output = nullPtrCheck(input, algo_);
+          return cleaver_output;
         }
 
       }
