@@ -305,7 +305,7 @@ namespace detail
           ConvertFieldDataTypeAlgo convertTypeAlgo;
           convertTypeAlgo.setOption(Parameters::FieldDatatype, "float");
           bool returnType = convertTypeAlgo.runImpl(input, output);
-          if (!returnBasis)
+          if (!returnType)
           {
             THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Data type conversion failed!")
           }
