@@ -30,8 +30,8 @@ DEALINGS IN THE SOFTWARE.
 #include <Core/Algorithms/Field/InterfaceWithCleaver2Algorithm.h>
 #include <Core/Algorithms/Field/InterfaceWithCleaverAlgorithm.h>
 #include <Core/Algorithms/Base/AlgorithmVariableNames.h>
-#include <Core⁩/⁨Algorithms⁩/⁨Legacy⁩/⁨Fields⁩/FieldData/ConvertFieldBasisType.h⁩>
-#include <Core⁩/⁨Algorithms⁩/⁨Legacy⁩/⁨Fields⁩/⁨FieldData/ConvertFieldDataType.h⁩>
+#include <Core/Algorithms/Legacy/Fields/FieldData/ConvertFieldBasisType.h>
+#include <Core/Algorithms/Legacy/Fields/FieldData/ConvertFieldDataType.h>
 
 #include <cleaver2/vec3.h>
 #include <cleaver2/BoundingBox.h>
