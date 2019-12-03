@@ -30,8 +30,6 @@ DEALINGS IN THE SOFTWARE.
 #include <Core/Algorithms/Field/InterfaceWithCleaver2Algorithm.h>
 #include <Core/Algorithms/Field/InterfaceWithCleaverAlgorithm.h>
 #include <Core/Algorithms/Base/AlgorithmVariableNames.h>
-#include <Core/Algorithms/Legacy/Fields/FieldData/ConvertFieldBasisType.h>
-#include <Core/Algorithms/Legacy/Fields/FieldData/ConvertFieldDataType.h>
 
 #include <cleaver2/vec3.h>
 #include <cleaver2/BoundingBox.h>
@@ -53,7 +51,7 @@ DEALINGS IN THE SOFTWARE.
 #include <Core/Utils/StringUtil.h>
 #include <boost/scoped_ptr.hpp>
 #include <Core/Logging/Log.h>
-#include <Core/Math/MiscMath.h>‎⁨
+#include <Core/Math/MiscMath.h>
 
 using namespace SCIRun;
 using namespace SCIRun::Core;
@@ -131,26 +129,6 @@ namespace detail
     {
       volume_.reset(new cleaver2::Volume(toVectorOfRawPointers(fields)));
 
-      // TODO DAN: add optional padding to sizing field...
-      /// Padding is now optional!
-      //boost::shared_ptr<cleaver2::AbstractVolume> paddedVolume(volume);
-      // const bool verbose = get(Verbose).toBool();
-      // const bool pad = get(Padding).toBool();
-      //
-      // if (pad)
-      // {
-      //   paddedVolume.reset(new Cleaver::PaddedVolume(volume.get()));
-      // }
-      //
-      // if (verbose)
-      // {
-      //  std::cout << "Input Dimensions: " << dims[0] << " x " << dims[1] << " x " << dims[2] << std::endl;
-      //  if (pad)
-      //   std::cout << "Padded Mesh with Volume Size " << paddedVolume->size().toString() << std::endl;
-      //      else
-      //         std::cout << "Creating Mesh with Volume Size " << volume->size().toString() << std::endl;
-      // }
-
       addSizingFieldToVolume();
 
       bool verbose = params_.verbose;
@@ -221,40 +199,171 @@ namespace detail
       return cleave(fields);
     }
 
-    void resetLatVolConverter()
+    // void resetLatVolConverter()
+    // {
+    //   x_ = y_ = z_ = 0;
+    // }
+
+    struct OnlyStructuredMeshes
     {
-      x_ = y_ = z_ = 0;
+      explicit OnlyStructuredMeshes(const AlgorithmBase* algo) : algo_(algo) {}
+      const AlgorithmBase* algo_;
+
+      FieldHandle operator()(FieldHandle input) const
+      {
+        if (!input->vmesh()->is_structuredmesh())
+        {
+          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "needs to be structured mesh!");
+        }
+        return input;
+      }
+    };
+
+    struct ConvertToLinearBasis
+    {
+      explicit ConvertToLinearBasis(const AlgorithmBase* algo) : algo_(algo) {}
+      const AlgorithmBase* algo_;
+
+      FieldHandle operator()(FieldHandle input) const
+      {
+        //TODO
+        // if (linear basis)
+        //   return input;
+        //
+        // algo converter;
+        // algo.convert(input);
+
+        return input;
+      }
+    };
+
+    struct OnlyScalarFields
+    {
+      explicit OnlyScalarFields(const AlgorithmBase* algo) : algo_(algo) {}
+      const AlgorithmBase* algo_;
+
+      FieldHandle operator()(FieldHandle input) const
+      {
+        if (!input->vfield()->is_scalar())
+        {
+          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "values at the node needs to be scalar!");
+        }
+        return input;
+      }
+    };
+
+    struct OnlyNonZeroSize
+    {
+      explicit OnlyNonZeroSize(const AlgorithmBase* algo) : algo_(algo) {}
+      const AlgorithmBase* algo_;
+
+      FieldHandle operator()(FieldHandle input) const
+      {
+        VMesh::dimension_type dims;
+        input->vmesh()->get_dimensions(dims);
+        if (dims[0] < 1 || dims[1] < 1 || dims[2] < 1)
+        {
+          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, " Size of input fields should be non-zero !");
+        }
+
+        return input;
+      }
+    };
+
+    struct AllInputDimensionsMatch
+    {
+      explicit AllInputDimensionsMatch(const AlgorithmBase* algo) : algo_(algo) {}
+      const AlgorithmBase* algo_;
+
+      FieldHandle operator()(FieldHandle input) const
+      {
+        if (!input->vmesh()->is_structuredmesh())
+        {
+          //TODO
+          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "needs to be structured mesh!");
+        }
+        return input;
+      }
+    };
+
+    struct OnlyThreeDimensionalFields
+    {
+      explicit OnlyThreeDimensionalFields(const AlgorithmBase* algo) : algo_(algo) {}
+      const AlgorithmBase* algo_;
+
+      FieldHandle operator()(FieldHandle input) const
+      {
+        if (!input->vmesh()->is_structuredmesh())
+        {
+          //TODO
+          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "needs to be structured mesh!");
+        }
+        return input;
+      }
+    };
+
+    struct ConvertToFloatData
+    {
+      explicit ConvertToFloatData(const AlgorithmBase* algo) : algo_(algo) {}
+      const AlgorithmBase* algo_;
+
+      FieldHandle operator()(FieldHandle input) const
+      {
+        if (!input->vmesh()->is_structuredmesh())
+        {
+          //TODO
+          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "needs to be structured mesh!");
+        }
+        return input;
+      }
+    };
+
+    using F = std::function<FieldHandle(FieldHandle)>;
+    using CheckList = std::vector<F>;
+
+    template <class T>
+    F makeChecker(const AlgorithmBase* algo)
+    {
+      return [algo](FieldHandle f) { T t(algo); return t(f); };
     }
 
-    static CleaverScalarField nullPtrCheck(FieldHandle input, const AlgorithmBase* algo_)
+    CheckList buildCheckList(const AlgorithmBase* algo)
     {
-      auto ptr = static_cast<float*>(input->vfield()->fdata_pointer());
-      if (ptr)
+      return
       {
-        return makeCleaver2FieldFromLatVol(input);
-      }
-      else
+        makeChecker<OnlyStructuredMeshes>(algo),
+        makeChecker<OnlyScalarFields>(algo),
+        makeChecker<OnlyNonZeroSize>(algo),
+        makeChecker<AllInputDimensionsMatch>(algo),
+        makeChecker<OnlyThreeDimensionalFields>(algo),
+        makeChecker<OnlyPositiveFieldValues>(algo),
+        makeChecker<ConvertToLinearBasis>(algo),
+        makeChecker<ConvertToFloatData>(algo)
+      };
+    }
+
+    FieldHandle runCheckList(const CheckList& checkList, FieldHandle field)
+    {
+      for (const auto& check : checkList)
       {
-        THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Field is NULL pointer");
+        field = check(field);
       }
+      return field;
     }
 
     CleaverScalarField convertToCleaverFormat(FieldHandle input)
     {
+
+      auto validField = runCheckList(buildCheckList(algo_), input);
+      return makeCleaver2FieldFromLatVol(validField);
+
+
       VMesh::dimension_type dims;
       auto imesh1 = input->vmesh();
 
-      if (!imesh1->is_structuredmesh())
+
       {
-        THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "needs to be structured mesh!");
-      }
-      else
-      {
-        auto vfield1 = input->vfield();
-        if (!vfield1->is_scalar())
-        {
-          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "values at the node needs to be scalar!");
-        }
+
 
         imesh1->get_dimensions(dims);
         if (x_ == 0)
@@ -262,14 +371,14 @@ namespace detail
           x_ = dims[0]; y_ = dims[1]; z_ = dims[2];
           if (x_ < 1 || y_ < 1 || z_ < 1)
           {
-            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Size of input fields should be non-zero!");
+            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, " Size of input fields should be non-zero !");
           }
         }
         else
         {
           if (dims[0] != x_ || dims[1] != y_ || dims[2] != z_)
           {
-            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Size of input fields is inconsistent!");
+            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, " Size of input fields is inconsistent !");
           }
         }
 
@@ -279,49 +388,27 @@ namespace detail
         }
 
         //0 = constant, 1 = linear
-        //if data is on the elements, map it onto the nodes.
         if (1 != vfield1->basis_order())
         {
-          FieldHandle output;
-          ConvertFieldBasisTypeAlgo convertBasisAlgo;
-          bool returnBasis = convertBasisAlgo.runImpl(input, output);
-          if (!returnBasis)
-          {
-            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Element to node conversion failed!");
-          }
-          else
-          {
-            algo_->warning("Data was mapped onto the nodes.");
-            input = output;
-            auto vfield1 = input->vfield();
-          }
-
+          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Input data need to be defined on input mesh nodes.");
         }
 
-        //convert all datatypes to float
-        if(!vfield1->is_float())
+        if (vfield1->is_float())
         {
-          FieldHandle output;
-          ConvertFieldDataTypeAlgo convertTypeAlgo;
-          convertTypeAlgo.setOption(Parameters::FieldDatatype, "float");
-          bool returnType = convertTypeAlgo.runImpl(input, output);
-          if (!returnType)
+          auto ptr = static_cast<float*>(vfield1->fdata_pointer());
+          if (ptr)
           {
-            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Data type conversion failed!")
+            return makeCleaver2FieldFromLatVol(input);
           }
           else
           {
-            algo_->warning("Data was converted to float.");
-            input = output;
-            auto vfield1 = input->vfield();
+            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "float field is NULL pointer");
           }
         }
         else
         {
-          auto cleaver_output = nullPtrCheck(input, algo_);
-          return cleaver_output;
+          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Input field needs to be a structured mesh (best would be a LatVol) with float values defined on mesh nodes. ");
         }
-
       }
     }
 
@@ -451,13 +538,13 @@ namespace detail
     {
       if (inputSizingField_)
       {
-        double min;
-        inputSizingField_->vfield()->min(min);
-        if (min <= 0)
-          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Sizing field must contain only positive values.");
+        // double min;
+        // inputSizingField_->vfield()->min(min);
+        // if (min <= 0)
+        //   THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Sizing field must contain only positive values.");
 
         //TODO: sloppy--need a const version
-        resetLatVolConverter();
+        //resetLatVolConverter();
         sizingField_ = convertToCleaverFormat(inputSizingField_);
         outputSizingField_ = inputSizingField_;
       }
@@ -536,7 +623,7 @@ namespace detail
     CleaverScalarField sizingField_;
     boost::shared_ptr<cleaver2::TetMesh> backgroundMesh_;
     boost::shared_ptr<cleaver2::Volume> volume_;
-    int x_ = 0, y_ = 0, z_ = 0;
+    //int x_ = 0, y_ = 0, z_ = 0;
   };
 }
 
