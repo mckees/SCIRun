@@ -295,7 +295,6 @@ namespace detail
       {
         if (!input->vmesh()->is_structuredmesh())
         {
-          //TODO
           THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "needs to be structured mesh!");
         }
         return input;
@@ -311,7 +310,6 @@ namespace detail
       {
         if (!input->vmesh()->is_structuredmesh())
         {
-          //TODO
           THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "needs to be structured mesh!");
         }
         return input;
@@ -360,11 +358,7 @@ namespace detail
 
       VMesh::dimension_type dims;
       auto imesh1 = input->vmesh();
-
-
       {
-
-
         imesh1->get_dimensions(dims);
         if (x_ == 0)
         {
