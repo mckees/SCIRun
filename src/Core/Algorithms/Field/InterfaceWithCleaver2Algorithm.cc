@@ -239,11 +239,9 @@ namespace detail
           else
           {
             algo_->warning("Data was mapped onto the nodes.");
-            //does this work?
-            input->vfield() = output->vfield();
           }
         }
-        return input;
+        return output;
       }
     };
 
@@ -346,10 +344,9 @@ namespace detail
             else
             {
               algo_->warning("Data type was converted to float.");
-              input->vfield() = output->vfield();
             }
           }
-        return input;
+        return output;
       }
     };
 
