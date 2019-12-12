@@ -55,6 +55,8 @@ DEALINGS IN THE SOFTWARE.
 #include <Core/Logging/Log.h>
 #include <Core/Math/MiscMath.h>
 
+#include <boost/optional.hpp>
+
 using namespace SCIRun;
 using namespace SCIRun::Core;
 using namespace SCIRun::Core::Algorithms;
@@ -239,9 +241,9 @@ namespace detail
           else
           {
             algo_->warning("Data was mapped onto the nodes.");
+            return output;
           }
         }
-        return output;
       }
     };
 
@@ -282,17 +284,24 @@ namespace detail
     {
       explicit AllInputDimensionsMatch(const AlgorithmBase* algo) : algo_(algo) {}
       const AlgorithmBase* algo_;
-
+      mutable boost::optional<VMesh::dimension_type> previousDims;
       FieldHandle operator()(FieldHandle input) const
       {
         VMesh::dimension_type dims;
         input->vmesh()->get_dimensions(dims);
-        if (dims[0] != x_ || dims[1] != y_ || dims[2] != z_)
+        if (previousDims)
         {
-          THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, " Size of input fields is inconsistent !");
+          if (dims[0] != (*previousDims)[0] || dims[1] != (*previousDims)[1] || dims[2] != (*previousDims)[2])
+          {
+            THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, " Size of input fields is inconsistent !");
+          }
+        }
+        else
+        {
+          previousDims = dims;
         }
         return input;
-      }
+       }
     };
 
     struct OnlyThreeDimensionalFields
@@ -344,9 +353,9 @@ namespace detail
             else
             {
               algo_->warning("Data type was converted to float.");
+              return output;
             }
           }
-        return output;
       }
     };
 
@@ -368,7 +377,6 @@ namespace detail
         makeChecker<OnlyNonZeroSize>(algo),
         makeChecker<AllInputDimensionsMatch>(algo),
         makeChecker<OnlyThreeDimensionalFields>(algo),
-        //makeChecker<OnlyPositiveFieldValues>(algo),
         makeChecker<ConvertToLinearBasis>(algo),
         makeChecker<ConvertToFloatData>(algo)
       };
@@ -515,13 +523,11 @@ namespace detail
     {
       if (inputSizingField_)
       {
-        // double min;
-        // inputSizingField_->vfield()->min(min);
-        // if (min <= 0)
-        //   THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Sizing field must contain only positive values.");
+         double min;
+         inputSizingField_->vfield()->min(min);
+         if (min <= 0)
+           THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "Sizing field must contain only positive values.");
 
-        //TODO: sloppy--need a const version
-        //resetLatVolConverter();
         sizingField_ = convertToCleaverFormat(inputSizingField_);
         outputSizingField_ = inputSizingField_;
       }
