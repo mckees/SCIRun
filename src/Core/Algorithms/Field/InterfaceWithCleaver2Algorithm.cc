@@ -223,7 +223,7 @@ namespace detail
 
       FieldHandle operator()(FieldHandle input) const
       {
-        if (1 = input->vfield()->basis_order())
+        if (1 == input->vfield()->basis_order())
         {
           return input;
         }
@@ -304,6 +304,8 @@ namespace detail
 
       FieldHandle operator()(FieldHandle input) const
       {
+        VMesh::dimension_type dims;
+        input->vmesh()->get_dimensions(dims);
         if (dims.size() != 3)
         {
           THROW_ALGORITHM_INPUT_ERROR_WITH(algo_, "need a three dimensional indicator function");
@@ -319,9 +321,9 @@ namespace detail
 
       FieldHandle operator()(FieldHandle input) const
       {
-        if (input->vmesh()->is_float())
+        if (input->vfield()->is_float())
           {
-            auto ptr = static_cast<float*>(input->vmesh()->fdata_pointer());
+            auto ptr = static_cast<float*>(input->vfield()->fdata_pointer());
             if (ptr)
             {
               return input;
@@ -335,7 +337,7 @@ namespace detail
           {
             FieldHandle output;
             ConvertFieldDataTypeAlgo convertTypeAlgo;
-            convertTypeAlgo.setOption(Parameters::FieldDataType, "float");
+            convertTypeAlgo.setOption(Parameters::FieldDatatype, "float");
             bool returnType = convertTypeAlgo.runImpl(input, output);
             if (!returnType)
             {
@@ -369,7 +371,7 @@ namespace detail
         makeChecker<OnlyNonZeroSize>(algo),
         makeChecker<AllInputDimensionsMatch>(algo),
         makeChecker<OnlyThreeDimensionalFields>(algo),
-        makeChecker<OnlyPositiveFieldValues>(algo),
+        //makeChecker<OnlyPositiveFieldValues>(algo),
         makeChecker<ConvertToLinearBasis>(algo),
         makeChecker<ConvertToFloatData>(algo)
       };
