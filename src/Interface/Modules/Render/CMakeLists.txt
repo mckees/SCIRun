@@ -1,12 +1,10 @@
-
 #
 #  For more information, please see: http://software.sci.utah.edu
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -27,6 +25,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
+
 ADD_DEFINITIONS(-DGLM_SWIZZLE -DGLM_FORCE_CXX03 -DGLM_FORCE_RADIANS)
 
 IF(UNIX)
@@ -42,6 +41,8 @@ SET(Interface_Modules_Render_FORMS
 
 SET(Interface_Modules_Render_HEADERS_TO_MOC
   ViewScene.h
+  ViewSceneManager.h
+  ViewSceneUtility.h
   ViewSceneControlsDock.h
   ViewOspraySceneConfig.h
   GLWidget.h
@@ -61,8 +62,11 @@ SET(Interface_Modules_Render_HEADERS_NO_MOC
   ES/CoreBootstrap.h
   ES/AssetBootstrap.h
   ES/Registration.h
+  ES/RendererInterface.h
+  ES/RendererInterfaceFwd.h
+  ES/RendererCollaborators.h
+  ES/RendererInterfaceCollaborators.h
   ES/comp/RenderBasicGeom.h
-  ES/comp/StaticSRInterface.h
   ES/comp/StaticWorldLight.h
   ES/comp/StaticClippingPlanes.h
   ES/comp/LightingUniforms.h
@@ -76,6 +80,8 @@ SET(Interface_Modules_Render_HEADERS_NO_MOC
 
 SET(Interface_Modules_Render_SOURCES
   ViewScene.cc
+  ViewSceneManager.cc
+  ViewSceneUtility.cc
   ViewSceneControlsDock.cc
   GLWidget.cc
   GLContext.cc
@@ -122,9 +128,7 @@ TARGET_LINK_LIBRARIES(Interface_Modules_Render
   ${SCI_TNY_LIBRARY}
 )
 
-IF(QT5_BUILD)
-  TARGET_LINK_LIBRARIES(Interface_Modules_Render Qt5::OpenGL)
-ENDIF()
+TARGET_LINK_LIBRARIES(Interface_Modules_Render Qt5::OpenGL)
 
 IF(BUILD_SHARED_LIBS)
   ADD_DEFINITIONS(-DBUILD_Interface_Modules_Render)
@@ -136,9 +140,8 @@ SCIRUN_ADD_TEST_DIR(Tests)
 
 IF(WITH_OSPRAY)
   ADD_SUBDIRECTORY(Ospray)
-  #INCLUDE(${CMAKE_SOURCE_DIR}/CMake/Modules/FindOSPRay.cmake)
-  INCLUDE_DIRECTORIES(${OSPRAY_INCLUDE_DIRS})
   TARGET_LINK_LIBRARIES(Interface_Modules_Render
     Interface_Modules_Render_Ospray
+    ospray::ospray
   )
 ENDIF()

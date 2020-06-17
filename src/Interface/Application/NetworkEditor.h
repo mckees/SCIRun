@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #ifndef INTERFACE_APPLICATION_NETWORKEDITOR_H
 #define INTERFACE_APPLICATION_NETWORKEDITOR_H
@@ -162,6 +162,20 @@ namespace Gui {
     enum { INITIAL_Z = 1000 };
   };
 
+  class ModuleWidgetPlacementManager
+  {
+  public:
+    void updateLatestFromDuplicate(const QPointF& scenePos);
+    void updateLatestFromConnectNew(const QPointF& scenePos, bool isInputPort);
+    void updateLatestFromReplace(const QPointF& scenePos);
+    QPointF getLast() const { return lastModulePosition_; }
+    QPointF getLastForDoubleClickedItem() const;
+    void setLastFromAddingNew(const QPointF& p) { lastModulePosition_ = p; }
+  private:
+    QPointF lastModulePosition_{ 30, 30 };
+    static QPointF connectNewIncrement(bool isInput);
+  };
+
   class ConnectionLine;
   class ModuleWidget;
   class NetworkEditorControllerGuiProxy;
@@ -242,16 +256,16 @@ namespace Gui {
 
     void disableViewScenes();
     void enableViewScenes();
+    void saveImages();
 
     //TODO: this class is getting too big and messy, schedule refactoring
 
     void setBackground(const QBrush& brush);
     QBrush background() const;
     void updateBackground(bool forceGrid);
+    void updateExecuteButtons(bool downstream);
 
     int connectionPipelineType() const;
-
-    QPixmap sceneGrab();
 
     SharedPointer<Dataflow::Engine::DisableDynamicPortSwitch> createDynamicPortDisabler();
 
@@ -279,6 +293,8 @@ namespace Gui {
     void sendItemsToParent();
     bool containsModule(const std::string& moduleId) const;
 
+    void hidePipesByType(const std::string& type);
+
     using ConnectorFunc = std::function<void(NetworkEditor*)>;
     static void setConnectorFunc(ConnectorFunc func) { connectorFunc_ = func; }
 
@@ -286,6 +302,8 @@ namespace Gui {
     static void setViewUpdateFunc(ViewUpdateFunc func) { viewUpdateFunc_ = func; }
 
     static void setMiniview(QGraphicsView* miniview) { miniview_ = miniview; }
+
+    static const int ConnectionHideTimeMS_ {15000};
 
     struct InEditingContext
     {
@@ -327,6 +345,8 @@ namespace Gui {
     void pinAllModuleUIs();
     void hideAllModuleUIs();
     void restoreAllModuleUIs();
+    void seeThroughAllModuleUIs();
+    void normalOpacityAllModuleUIs();
     void updateViewport();
     void connectionAddedQueued(const SCIRun::Dataflow::Networks::ConnectionDescription& cd);
     void setMouseAsDragMode();
@@ -363,7 +383,6 @@ namespace Gui {
     void moduleMoved(const SCIRun::Dataflow::Networks::ModuleId& id, double newX, double newY);
     void defaultNotePositionChanged(NotePosition position);
     void defaultNoteSizeChanged(int size);
-    void sceneChanged(const QList<QRectF>& region);
     void snapToModules();
     void highlightPorts(int state);
     void zoomLevelChanged(int zoom);
@@ -410,6 +429,7 @@ namespace Gui {
     void alignViewport();
     void deleteImpl(QList<QGraphicsItem*> items);
     QPointF getModulePositionAdjustment(const SCIRun::Dataflow::Networks::ModulePositions& modulePositions);
+    void deselectAll();
 
     // default constructed
     bool modulesSelectedByCL_{ false };
@@ -420,9 +440,10 @@ namespace Gui {
     bool insertingNewModuleAlongConnection_{ false };
     bool showTagGroupsOnFileLoad_{ false };
     bool visibleItems_{ true };
-    QPointF lastModulePosition_{ 30, 30 };
+    ModuleWidgetPlacementManager modulePlacement_;
     std::string latestModuleId_;
     std::map<int, std::string> tagLabelOverrides_;
+    QTimeLine* connectionDimmingTimeLine_{nullptr};
 
     // for subnets
     NetworkEditorParameters ctorParams_;

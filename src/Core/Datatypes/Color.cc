@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -26,6 +25,7 @@
    DEALINGS IN THE SOFTWARE.
 */
 
+
 ///@todo Documentation Core/Datatypes/Color.cc
 
 #include <sstream>
@@ -37,6 +37,11 @@ using namespace SCIRun::Core::Datatypes;
 
 ColorRGB::ColorRGB()
   : r_(1.0), g_(1.0), b_(1.0), a_(1.0)
+{
+}
+
+ColorRGB::ColorRGB(double v)
+  : r_(v), g_(v), b_(v), a_(1.0)
 {
 }
 
@@ -71,7 +76,7 @@ ColorRGB::ColorRGB(const std::string& rgb) : r_(1.0), g_(1.0), b_(1.0), a_(1.0)
   }
 }
 
-ColorRGB::ColorRGB(unsigned long int rgbHexValue) :
+ColorRGB::ColorRGB(unsigned int rgbHexValue) :
   r_(((rgbHexValue & 0xFF0000) >> 16) / 255.0),
   g_(((rgbHexValue & 0xFF00) >> 8) / 255.0),
   b_((rgbHexValue & 0xFF) / 255.0),

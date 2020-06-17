@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2009 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 /*
  * This module reads a matlab file and converts it to a SCIRun matrix
@@ -69,6 +69,7 @@ void ImportMatricesFromMatlab::setStateDefaults()
   auto nones = makeHomogeneousVariableList([](size_t) { return std::string("<none>"); }, NUMPORTS);
   get_state()->setValue(Parameters::PortChoices, nones);
   get_state()->setValue(Variables::Filename, std::string());
+  get_state()->connectSpecificStateChanged(Variables::Filename, [this]() { indexmatlabfile(); });
 }
 
 void ImportMatricesFromMatlab::postStateChangeInternalSignalHookup()

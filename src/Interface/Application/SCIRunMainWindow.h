@@ -3,7 +3,7 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
    Permission is hereby granted, free of charge, to any person obtaining a
@@ -24,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #ifndef INTERFACE_APPLICATION_SCIRUN_MAIN_WINDOW_H
 #define INTERFACE_APPLICATION_SCIRUN_MAIN_WINDOW_H
@@ -51,7 +52,6 @@ namespace Gui {
 
 class NetworkEditor;
 class ProvenanceWindow;
-class DeveloperConsole;
 class PreferencesWindow;
 class ShortcutsInterface;
 class TagManagerWindow;
@@ -60,6 +60,8 @@ class FileDownloader;
 class TriggeredEventsWindow;
 class MacroEditor;
 class NetworkEditorBuilder;
+class SettingsValueInterface;
+using SettingsValueInterfacePtr = std::shared_ptr<SettingsValueInterface>;
 
 class MainWindowCommands
 {
@@ -110,6 +112,7 @@ public Q_SLOTS:
   void setDataDirectoryFromGUI();
   void setConnectionPipelineType(int type);
   void setSaveBeforeExecute(int state);
+  void reportIssue();
 protected:
   virtual void closeEvent(QCloseEvent* event) override;
   virtual void keyPressEvent(QKeyEvent *event) override;
@@ -122,8 +125,7 @@ private:
   SCIRunMainWindow();
   NetworkEditor* networkEditor_;
   ProvenanceWindow* provenanceWindow_;
-  TagManagerWindow* tagManagerWindow_;
-  DeveloperConsole* devConsole_;
+  TagManagerWindow* tagManagerWindow_ {nullptr};
   PreferencesWindow* prefsWindow_;
   PythonConsoleWidget* pythonConsole_;
   ShortcutsInterface* shortcuts_ { nullptr };
@@ -208,6 +210,7 @@ private:
   int dockSpace_{0};
   class DockManager* dockManager_;
   static const QString saveFragmentData_;
+  std::vector<SettingsValueInterfacePtr> settingsValues_;
 
 Q_SIGNALS:
   void moduleItemDoubleClicked();
@@ -238,6 +241,7 @@ private Q_SLOTS:
   void importLegacyNetwork();
   void launchNewInstance();
   void launchNewUserWizard();
+  void launchPythonWizard();
   void loadNetwork();
   void loadPythonAPIDoc();
   void loadRecentNetwork();
@@ -260,7 +264,6 @@ private Q_SLOTS:
   void removeSavedSubnetwork();
   void removeToolkit();
   void renameSavedSubnetwork();
-  void reportIssue();
   void resetWindowLayout();
   void runNewModuleWizard();
   void runScript();

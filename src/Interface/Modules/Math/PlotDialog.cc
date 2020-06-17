@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <Interface/Modules/Math/PlotDialog.h>
 #include <Core/Datatypes/DenseMatrix.h>
@@ -128,7 +128,7 @@ Plot::Plot(QWidget *parent) : QwtPlot( parent )
   connect(canvas, SIGNAL(curveSelected(int, const QString&)), this, SLOT(highlightCurve(int, const QString&)));
   canvas->setLineWidth( 1 );
   canvas->setFrameStyle( QFrame::Box | QFrame::Plain );
-  canvas->setBorderRadius( 15 );
+  //canvas->setBorderRadius( 3 ); //TODO: this line is buggy in Qt5. Plus, the background color doesn't work.
 
   setCanvas( canvas );
 

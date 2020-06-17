@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -26,8 +25,11 @@
    DEALINGS IN THE SOFTWARE.
 */
 
-#ifdef QT5_BUILD
+
 #include <QtWidgets>
+
+#ifdef OLDER_QT_SUPPORT_NEEDED // remove when Travis linux build has newer Qt 5 version
+#define WIDTH_FUNC width
 #else
-#include <QtGui>
+#define WIDTH_FUNC horizontalAdvance
 #endif

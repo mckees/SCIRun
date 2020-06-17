@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <Core/CommandLine/CommandLine.h>
 #include <boost/program_options.hpp>
@@ -57,10 +57,12 @@ public:
       //("logfile,l", po::value<std::string>(), "add output messages to a logfile--TODO")
       ("most-recent,1", "load the most recently used file")
       ("interactive,i", "interactive mode")
+      ("save-images,z", "save all ViewScene images before quitting")
       ("headless,x", "disable GUI")
       ("input-file", po::value<std::vector<std::string>>(), "SCIRun Network Input File")
       ("script,s", po::value<std::string>(), "Python script--interpret and drop into embedded console")
       ("Script,S", po::value<std::string>(), "Python script--interpret and quit after one SCIRun execution pass")
+      ("import", po::value<std::string>(), "Import a network from SCIRun 4.7")
       ("no_splash,0", "Turn off splash screen")
       ("verbose", "Turn on debug log information")
       //("threadMode", po::value<std::string>(), "network execution threading mode--DEVELOPER USE ONLY")
@@ -165,6 +167,7 @@ public:
       bool disableSplash,
       bool isRegressionMode,
       bool interactiveMode,
+      bool saveImages,
       bool quitAfterOneScriptedExecution,
       bool loadMostRecentFile,
       bool isVerboseMode,
@@ -172,6 +175,7 @@ public:
       executeNetworkAndQuit_(executeNetworkAndQuit), disableGui_(disableGui),
       disableSplash_(disableSplash), isRegressionMode_(isRegressionMode),
       interactiveMode_(interactiveMode),
+      saveImages_(saveImages),
       quitAfterOneScriptedExecution_(quitAfterOneScriptedExecution),
       loadMostRecentFile_(loadMostRecentFile),
       isVerboseMode_(isVerboseMode),
@@ -179,7 +183,7 @@ public:
     {}
     bool help_, version_, executeNetwork_, executeNetworkAndQuit_,
       disableGui_, disableSplash_, isRegressionMode_, interactiveMode_,
-      quitAfterOneScriptedExecution_,
+      saveImages_, quitAfterOneScriptedExecution_,
       loadMostRecentFile_, isVerboseMode_, printModules_;
   };
   ApplicationParametersImpl(
@@ -187,10 +191,12 @@ public:
     std::vector<std::string>&& inputFiles,
     const boost::optional<boost::filesystem::path>& pythonScriptFile,
     const boost::optional<boost::filesystem::path>& dataDirectory,
+    const boost::optional<std::string>& networkToImport,
     DeveloperParametersPtr devParams,
     const Flags& flags
    ) : entireCommandLine_(entireCommandLine),
     inputFiles_(inputFiles), pythonScriptFile_(pythonScriptFile), dataDirectory_(dataDirectory),
+    networkToImport_(networkToImport),
     devParams_(devParams),
     flags_(flags)
   {}
@@ -208,6 +214,11 @@ public:
   boost::optional<boost::filesystem::path> dataDirectory() const override
   {
     return dataDirectory_;
+  }
+
+  boost::optional<std::string> importNetworkFile() const override
+  {
+    return networkToImport_;
   }
 
   bool help() const override
@@ -250,6 +261,11 @@ public:
     return flags_.interactiveMode_;
   }
 
+  bool saveViewSceneScreenshotsOnQuit() const override
+  {
+    return flags_.saveImages_;
+  }
+
   bool quitAfterOneScriptedExecution() const override
   {
     return flags_.quitAfterOneScriptedExecution_;
@@ -285,6 +301,7 @@ private:
   std::vector<std::string> inputFiles_;
   boost::optional<boost::filesystem::path> pythonScriptFile_;
   boost::optional<boost::filesystem::path> dataDirectory_;
+  boost::optional<std::string> networkToImport_;
   DeveloperParametersPtr devParams_;
   Flags flags_;
 };
@@ -330,12 +347,18 @@ ApplicationParametersHandle CommandLineParser::parse(int argc, const char* argv[
     {
       dataDirectory = boost::filesystem::path(parsed["datadir"].as<std::string>());
     }
+    auto importNetworkFile = boost::optional<std::string>();
+    if (parsed.count("import") != 0 && !parsed["import"].empty() && !parsed["import"].defaulted())
+    {
+      importNetworkFile = parsed["import"].as<std::string>();
+    }
 
     return boost::make_shared<ApplicationParametersImpl>
       (boost::algorithm::join(cmdline, " "),
       std::move(inputFiles),
       pythonScriptFile,
       dataDirectory,
+      importNetworkFile,
       boost::make_shared<DeveloperParametersImpl>(
         parseOptionalArg<std::string>(parsed, "threadMode"),
         parseOptionalArg<std::string>(parsed, "reexecuteMode"),
@@ -353,6 +376,7 @@ ApplicationParametersHandle CommandLineParser::parse(int argc, const char* argv[
         parsed.count("no_splash") != 0,
         parsed.count("regression") != 0,
         parsed.count("interactive") != 0,
+        parsed.count("save-images") != 0,
         parsed.count("Script") != 0,
         parsed.count("most-recent") != 0,
         parsed.count("verbose") != 0,

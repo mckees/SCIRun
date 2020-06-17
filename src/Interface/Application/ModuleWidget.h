@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -26,6 +25,7 @@
    DEALINGS IN THE SOFTWARE.
 */
 
+
 #ifndef INTERFACE_APPLICATION_MODULEWIDGET_H
 #define INTERFACE_APPLICATION_MODULEWIDGET_H
 
@@ -34,6 +34,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/timer.hpp>
+#include <boost/bimap.hpp>
 #include <set>
 #include <deque>
 #include <atomic>
@@ -137,6 +138,8 @@ public:
   bool executionDisabled() const { return disabled_; }
   void setExecutionDisabled(bool disabled);
 
+  void saveImagesFromViewScene();
+
   void highlightPorts();
   void unhighlightPorts();
 
@@ -173,6 +176,8 @@ public:
   void collapsePinnedDialog();
 
   static double highResolutionExpandFactor_;
+  static QString downstreamOnlyIcon;
+  static QString allIcon;
 
   void setupPortSceneCollaborator(QGraphicsProxyWidget* proxy);
 
@@ -194,6 +199,8 @@ public Q_SLOTS:
   void pinUI();
   void hideUI();
   void showUI();
+  void seeThroughUI();
+  void normalOpacityUI();
   void updateMetadata(bool active);
   void updatePortSpacing(bool highlighted);
   void replaceMe();
@@ -245,6 +252,7 @@ private Q_SLOTS:
   void updateDockWidgetProperties(bool isFloating);
   void incomingConnectionStateChanged(bool disabled, int index);
   void showReplaceWithWidget();
+  void toggleProgrammableInputPort();
 protected:
   virtual void enterEvent(QEvent* event) override;
   virtual void leaveEvent(QEvent* event) override;
@@ -253,7 +261,7 @@ private:
   boost::shared_ptr<PortWidgetManager> ports_;
   boost::timer timer_;
   bool deletedFromGui_, colorLocked_;
-  bool executedOnce_, skipExecuteDueToFatalError_, disabled_;
+  bool executedOnce_, skipExecuteDueToFatalError_, disabled_, programmablePortEnabled_{false};
   std::atomic<bool> errored_;
   int previousPageIndex_ {0};
   QDialog* replaceWithDialog_{ nullptr };
@@ -299,6 +307,7 @@ private:
   void addOutputPortsToLayout(int index);
   void addOutputPortsToWidget(int index);
   void removeOutputPortsFromWidget(int index);
+  void updateProgrammablePorts();
   QHBoxLayout* inputPortLayout_;
   QHBoxLayout* outputPortLayout_;
   bool deleting_;
@@ -306,8 +315,14 @@ private:
   const QString defaultBackgroundColor_;
   bool isViewScene_; //TODO: lots of special logic around this case.
 
+  typedef boost::bimap<QString, int> ColorStateLookup;
+  typedef ColorStateLookup::value_type ColorStatePair;
+  ColorStateLookup colorStateLookup_;
+  void fillColorStateLookup(const QString& background);
+
   boost::shared_ptr<class ConnectionFactory> connectionFactory_;
   boost::shared_ptr<class ClosestPortFinder> closestPortFinder_;
+  QString* currentExecuteIcon_ {nullptr};
 
   friend class ::PortBuilder;
 };

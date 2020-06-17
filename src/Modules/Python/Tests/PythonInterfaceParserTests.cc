@@ -3,7 +3,7 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
    Permission is hereby granted, free of charge, to any person obtaining a
@@ -24,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -51,7 +52,8 @@ std::unique_ptr<InterfaceWithPythonCodeTranslatorImpl> makeParser()
   state->setValue(Name(portIds[0]), std::string("str1"));
   state->setValue(Name("PythonOutputString1Name"), std::string("out1"));
 
-  std::unique_ptr<InterfaceWithPythonCodeTranslatorImpl> parser(new InterfaceWithPythonCodeTranslatorImpl(moduleId, state));
+  std::unique_ptr<InterfaceWithPythonCodeTranslatorImpl> parser(new InterfaceWithPythonCodeTranslatorImpl(
+    [=]() { return moduleId; }, state, InterfaceWithPython::outputNameParameters()));
   parser->updatePorts(portIds);
   return parser;
 }

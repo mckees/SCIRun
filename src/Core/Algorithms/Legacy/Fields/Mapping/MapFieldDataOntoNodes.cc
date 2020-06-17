@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -327,7 +326,7 @@ MapFieldDataOntoNodesAlgo::runImpl(FieldHandle source, FieldHandle weights,
   // Mark whether it is a flux computation
   algo.is_flux_ = quantity == "flux";
 
-  auto task_i = [&algo,this](int i) { algo.parallel(i); };
+  auto task_i = [&algo](int i) { algo.parallel(i); };
   Parallel::RunTasks(task_i, Parallel::NumCores());
 
  // Check whether algorithm succeeded
@@ -451,7 +450,7 @@ MapFieldDataOntoNodesAlgo::runImpl(FieldHandle source, FieldHandle destination, 
   // Mark whether it is a flux computation
   algo.is_flux_ = quantity == "flux";
 
-  auto task_i = [&algo,this](int i) { algo.parallel(i); };
+  auto task_i = [&algo](int i) { algo.parallel(i); };
   Parallel::RunTasks(task_i, Parallel::NumCores());
 
  // Check whether algorithm succeeded

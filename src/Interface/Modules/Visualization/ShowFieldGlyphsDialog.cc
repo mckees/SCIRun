@@ -1,30 +1,30 @@
 /*
-For more information, please see: http://software.sci.utah.edu
+   For more information, please see: http://software.sci.utah.edu
 
-The MIT License
+   The MIT License
 
-Copyright (c) 2015 Scientific Computing and Imaging Institute,
-University of Utah.
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
+   University of Utah.
 
-License for the specific language governing rights and limitations under
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the "Software"),
-to deal in the Software without restriction, including without limitation
-the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <Interface/Modules/Visualization/ShowFieldGlyphsDialog.h>
 #include <Modules/Visualization/ShowFieldGlyphs.h>
@@ -135,10 +135,10 @@ void ShowFieldGlyphsDialog::setupScalarsTab()
   connectButtonToExecuteSignal(this->scalarsUniformTransparencyRButton_);
 
   // Text Labels
-  this->scalarColorTypeLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->scalarColorInputLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->normalizeScalarsCheckBox_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->scalarScaleLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->scalarColorTypeLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->scalarColorInputLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->normalizeScalarsCheckBox_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->scalarScaleLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 }
 
 void ShowFieldGlyphsDialog::setupVectorsTab()
@@ -166,35 +166,48 @@ void ShowFieldGlyphsDialog::setupVectorsTab()
   addCheckableButtonManager(this->renderVectorsBelowThresholdCheckBox_, ShowFieldGlyphs::RenderVectorsBelowThreshold);
   addDoubleSpinBoxManager(this->vectorsThresholdDoubleSpinBox_, ShowFieldGlyphs::VectorsThreshold);
   // Radius/Width
+  addRadioButtonGroupManager({ this->secondaryVectorParameterUniformRButton_, this->secondaryVectorParameterPortRButton_}, ShowFieldGlyphs::SecondaryVectorParameterScalingType);
   addComboBoxManager(this->secondaryVectorParameterPortComboBox_, ShowFieldGlyphs::SecondaryVectorParameterDataInput);
   addDoubleSpinBoxManager(this->secondaryVectorParameterDoubleSpinBox_, ShowFieldGlyphs::SecondaryVectorParameterScale);
-  // Arrow Head Ratio
+  // Arrow Settings
   addDoubleSpinBoxManager(this->arrowHeadRatioDoubleSpinBox_, ShowFieldGlyphs::ArrowHeadRatio);
-  // Bidirectional
   addCheckableButtonManager(this->bidirectionalVectorsCheckBox_, ShowFieldGlyphs::RenderBidirectionaly);
+  addCheckableButtonManager(this->renderWithBasesCheckBox_, ShowFieldGlyphs::RenderBases);
 
   // Execute if any changed
   connectButtonToExecuteSignal(this->showVectorsCheckBox_);
   connectButtonToExecuteSignal(this->vectorsTransparencyOffRButton_);
   connectButtonToExecuteSignal(this->vectorsUniformTransparencyRButton_);
+  connectButtonToExecuteSignal(this->secondaryVectorParameterUniformRButton_);
+  connectButtonToExecuteSignal(this->secondaryVectorParameterPortRButton_);
   connectButtonToExecuteSignal(this->normalizeVectorsCheckBox_);
   connectButtonToExecuteSignal(this->renderVectorsBelowThresholdCheckBox_);
   connectButtonToExecuteSignal(this->bidirectionalVectorsCheckBox_);
+  connectButtonToExecuteSignal(this->renderWithBasesCheckBox_);
 
   // Text Labels
-  this->vectorColorTypeLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->vectorColorInputLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->normalizeVectorsCheckBox_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->vectorScaleLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->secondaryVectorParameterInputLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->secondaryVectorParameterScaleLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->bidirectionalVectorsCheckBox_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->springsMajorRadiusInputLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->springsMajorRadiusScaleLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->springsMinorRadiusInputLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->springsMinorRadiusScaleLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->springsPitchInputLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->springsPitchScaleLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->vectorColorTypeLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->vectorColorInputLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->normalizeVectorsCheckBox_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->vectorScaleLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->secondaryVectorParameterScaleLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->bidirectionalVectorsCheckBox_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->springsMajorRadiusInputLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->springsMajorRadiusScaleLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->springsMinorRadiusInputLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->springsMinorRadiusScaleLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->springsPitchInputLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  // this->springsPitchScaleLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+}
+
+void ShowFieldGlyphsDialog::emphasisSliderChanged(int val)
+{
+  superquadricEmphasisDoubleSpinBox_->setValue(val * 0.1);
+}
+
+void ShowFieldGlyphsDialog::emphasisSpinBoxChanged(double val)
+{
+  superquadricEmphasisSlider_->setValue(int(val * 10));
 }
 
 void ShowFieldGlyphsDialog::setupTensorsTab()
@@ -221,6 +234,9 @@ void ShowFieldGlyphsDialog::setupTensorsTab()
   // Threshold
   addCheckableButtonManager(this->renderVectorsBelowThresholdCheckBox_, ShowFieldGlyphs::RenderTensorsBelowThreshold);
   addDoubleSpinBoxManager(this->tensorsThresholdDoubleSpinBox_, ShowFieldGlyphs::TensorsThreshold);
+  addDoubleSpinBoxManager(this->superquadricEmphasisDoubleSpinBox_, ShowFieldGlyphs::SuperquadricEmphasis);
+  connect(this->superquadricEmphasisSlider_, SIGNAL(valueChanged(int)), this, SLOT(emphasisSliderChanged(int)));
+  connect(this->superquadricEmphasisDoubleSpinBox_, SIGNAL(valueChanged(double)), this, SLOT(emphasisSpinBoxChanged(double)));
 
   connectButtonToExecuteSignal(this->showTensorsCheckBox_);
   connectButtonToExecuteSignal(this->tensorsTransparencyOffRButton_);
@@ -229,9 +245,9 @@ void ShowFieldGlyphsDialog::setupTensorsTab()
   connectButtonToExecuteSignal(this->renderTensorsBelowThresholdCheckBox_);
 
   // Text Labels
-  this->tensorSuperquadricsEmphasisSlider_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->tensorColorTypeLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->tensorColorInputLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  this->superquadricEmphasisSlider_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  this->tensorColorTypeLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  this->tensorColorInputLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
   this->normalizeTensorsCheckBox_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
-  this->tensorScaleLabel->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
+  this->tensorScaleLabel_->setStyleSheet("background-color: rgba(255, 255, 255, 0);");
 }

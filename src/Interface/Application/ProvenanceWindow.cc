@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <QtGui>
 #include <iostream>
@@ -47,7 +47,8 @@ ProvenanceWindow::ProvenanceWindow(ProvenanceManagerHandle provenanceManager, QW
   networkEditor_(provenanceManager->networkIO())
 {
   setupUi(this);
-  networkXMLTextEdit_->setTabStopWidth(15);
+  // TODO deprecated
+  //networkXMLTextEdit_->setTabStopWidth(15);
 
   connect(provenanceListWidget_, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(displayInfo(QListWidgetItem*)));
   connect(provenanceListWidget_, SIGNAL(currentItemChanged(QListWidgetItem*, QListWidgetItem*)), this, SLOT(displayInfo(QListWidgetItem*)));
@@ -98,14 +99,14 @@ public:
     QFont f = font();
     f.setItalic(false);
     setFont(f);
-    setBackgroundColor(Qt::white);
+    setBackground(Qt::white);
   }
   void setAsRedo()
   {
     QFont f = font();
     f.setItalic(true);
     setFont(f);
-    setBackgroundColor(Qt::lightGray);
+    setBackground(Qt::lightGray);
   }
   QString xmlText() const
   {

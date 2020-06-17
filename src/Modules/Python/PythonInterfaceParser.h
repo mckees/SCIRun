@@ -3,7 +3,7 @@
 
    The MIT License
 
-   Copyright (c) 2016 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
    Permission is hereby granted, free of charge, to any person obtaining a
@@ -23,7 +23,8 @@
    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
-   */
+*/
+
 
 #ifndef MODULES_PYTHON_PYTHONINTERFACEPARSER_H
 #define MODULES_PYTHON_PYTHONINTERFACEPARSER_H
@@ -57,11 +58,13 @@ namespace SCIRun
           virtual void updatePorts(const std::vector<std::string>& portIds) = 0;
         };
 
+        using ModuleIdGetter = std::function<std::string()>;
+
         class SCISHARE InterfaceWithPythonCodeTranslatorImpl : public InterfaceWithPythonCodeTranslator
         {
         public:
-          InterfaceWithPythonCodeTranslatorImpl(const std::string& moduleId,
-            const Dataflow::Networks::ModuleStateHandle& state);
+          InterfaceWithPythonCodeTranslatorImpl(ModuleIdGetter moduleId,
+            const Dataflow::Networks::ModuleStateHandle& state, const std::vector<AlgorithmParameterName>& outputNamesToCheck);
 
           void updatePorts(const std::vector<std::string>& portIds) override { portIds_ = portIds; }
           PythonCodeBlock translate(const std::string& code) const override;
@@ -75,8 +78,9 @@ namespace SCIRun
           PythonCodeBlock concatenateAndTranslateMatlabBlocks(const PythonCode& code) const;
           std::string translateMatlabBlock(const PythonCodeBlock& code) const;
         private:
-          const std::string moduleId_;
+          ModuleIdGetter moduleId_;
           const Dataflow::Networks::ModuleStateHandle state_;
+          std::vector<AlgorithmParameterName> outputNamesToCheck_;
           std::vector<std::string> portIds_;
           void parsePart(PythonCode& blocks, const std::string& part) const;
         };

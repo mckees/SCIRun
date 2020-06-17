@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -26,6 +25,7 @@
    DEALINGS IN THE SOFTWARE.
 */
 
+
 #include <QApplication>
 #include <QMessageBox>
 #include <Interface/Application/GuiApplication.h>
@@ -36,9 +36,40 @@
 
 using namespace SCIRun::Gui;
 
+class SCIRunGuiApplication : public QApplication
+{
+public:
+  SCIRunGuiApplication(int& argc, char** argv) :
+    QApplication(argc, argv) {}
+
+  bool notify(QObject* receiver, QEvent* event) override
+  {
+    try
+    {
+      return QApplication::notify(receiver, event);
+    }
+    catch (const std::exception& e)
+    {
+      QMessageBox::critical(0, "Critical error", "Unhandled exception: " + QString(e.what()) + "\nPlease report an issue describing what caused this message.");
+      SCIRun::logCritical("Unhandled exception: {}", e.what());
+      SCIRunGuiRunner::reportIssue();
+      return false;
+    }
+    catch (...)
+    {
+      QMessageBox::critical(0, "Critical error", "Unknown unhandled exception: please report an issue describing what caused this message.");
+      SCIRun::logCritical("Unhandled exception: Unknown type");
+      SCIRunGuiRunner::reportIssue();
+      return false;
+    }
+  }
+};
+
+
 int GuiApplication::run(int argc, const char* argv[])
 {
-  QApplication app(argc, const_cast<char**>(argv));
+  QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+  SCIRunGuiApplication app(argc, const_cast<char**>(argv));
 
   try
   {

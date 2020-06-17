@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -24,7 +23,8 @@
    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
-   */
+*/
+
 
 #include <Interface/Modules/Factory/ModuleDialogFactory.h>
 #include <Interface/Modules/Base/ModuleDialogBasic.h>
@@ -69,9 +69,7 @@
 #include <Interface/Modules/Fields/CalculateFieldDataDialog.h>
 #include <Interface/Modules/Fields/ResampleRegularMeshDialog.h>
 #include <Interface/Modules/Fields/FairMeshDialog.h>
-#if WITH_TETGEN
 #include <Interface/Modules/Fields/InterfaceWithTetGenDialog.h>
-#endif
 #include <Interface/Modules/Fields/ProjectPointsOntoMeshDialog.h>
 #include <Interface/Modules/Fields/CalculateDistanceToFieldDialog.h>
 #include <Interface/Modules/Fields/CalculateDistanceToFieldBoundaryDialog.h>
@@ -169,9 +167,7 @@ void ModuleDialogFactory::addDialogsToMakerMap1()
     ADD_MODULE_DIALOG(ProjectPointsOntoMesh, ProjectPointsOntoMeshDialog)
     ADD_MODULE_DIALOG(CalculateDistanceToField, CalculateDistanceToFieldDialog)
     ADD_MODULE_DIALOG(CalculateDistanceToFieldBoundary, CalculateDistanceToFieldBoundaryDialog)
-#if WITH_TETGEN
     ADD_MODULE_DIALOG(InterfaceWithTetGen, InterfaceWithTetGenDialog)
-#endif
     ADD_MODULE_DIALOG(MapFieldDataOntoElements, MapFieldDataOntoElemsDialog)
     ADD_MODULE_DIALOG(MapFieldDataOntoNodes, MapFieldDataOntoNodesDialog)
     ADD_MODULE_DIALOG(MapFieldDataFromSourceToDestination, MapFieldDataFromSourceToDestinationDialog)

@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2013 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -26,8 +25,9 @@
    DEALINGS IN THE SOFTWARE.
 */
 
-/// \author James Hughes
-/// \date   April 2013
+
+/// author James Hughes
+/// date   April 2013
 
 #include "ArcLookAt.hpp"
 #include <arc-ball/ArcBall.hpp>
@@ -109,6 +109,20 @@ glm::mat4 ArcLookAt::getWorldViewTransform() const
   finalTrafo[3][2]   += -mCamDistance;
 
   return finalTrafo;
+}
+
+//------------------------------------------------------------------------------
+glm::vec3 ArcLookAt::getUp()
+{
+  return glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f) * glm::mat3(mArcBall->getTransformation()));
+}
+
+//------------------------------------------------------------------------------
+glm::vec3 ArcLookAt::getPos()
+{
+  glm::vec3 relativePos = glm::vec3(0.0f, 0.0f, -1.0f) * glm::mat3(mArcBall->getTransformation());
+  relativePos = glm::normalize(relativePos) * mCamDistance;
+  return relativePos - mCamLookAt;
 }
 
 //------------------------------------------------------------------------------

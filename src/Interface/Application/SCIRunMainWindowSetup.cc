@@ -1,29 +1,30 @@
 /*
-  For more information, please see: http://software.sci.utah.edu
+   For more information, please see: http://software.sci.utah.edu
 
-  The MIT License
+   The MIT License
 
-  Copyright (c) 2015 Scientific Computing and Imaging Institute,
-  University of Utah.
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
+   University of Utah.
 
-  Permission is hereby granted, free of charge, to any person obtaining a
-  copy of this software and associated documentation files (the "Software"),
-  to deal in the Software without restriction, including without limitation
-  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-  and/or sell copies of the Software, and to permit persons to whom the
-  Software is furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included
-  in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
 
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-  DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <es-log/trace-log.h>
 #include <QtGui>
@@ -279,7 +280,7 @@ void SCIRunMainWindow::setupNetworkEditor()
 	auto preexecuteFunc = [this]() { preexecute(); };
   auto highResolutionExpandFactor = Core::Application::Instance().parameters()->developerParameters()->guiExpandFactor().get_value_or(1.0);
   {
-    auto screen = QApplication::desktop()->screenGeometry();
+    auto screen = QGuiApplication::screens()[0]->size();
     if (screen.height() * screen.width() > 4096000) // 2560x1600
       highResolutionExpandFactor = NetworkBoundaries::highDPIExpandFactorDefault;
   }
@@ -334,25 +335,37 @@ void SCIRunMainWindow::setActionIcons()
 
 void SCIRunMainWindow::makeFilterButtonMenu()
 {
+  auto updateFilterStatus = [this]() { filterModuleNamesInTreeView(moduleFilterLineEdit_->text()); };
+
   auto filterMenu = new QMenu(filterButton_);
   filterActionGroup_ = new QActionGroup(filterMenu);
   auto startsWithAction = new QAction("Starts with", filterButton_);
+  connect(startsWithAction, &QAction::triggered, updateFilterStatus);
   startsWithAction->setCheckable(true);
   filterActionGroup_->addAction(startsWithAction);
   filterMenu->addAction(startsWithAction);
 
   auto wildcardAction = new QAction("Use wildcards", filterButton_);
+  connect(wildcardAction, &QAction::triggered, updateFilterStatus);
   wildcardAction->setCheckable(true);
   filterActionGroup_->addAction(wildcardAction);
   filterMenu->addAction(wildcardAction);
 
   auto fuzzySearchAction = new QAction("Use fuzzy search", filterButton_);
+  connect(fuzzySearchAction, &QAction::triggered, updateFilterStatus);
   fuzzySearchAction->setCheckable(true);
   filterActionGroup_->addAction(fuzzySearchAction);
   fuzzySearchAction->setChecked(true);
   filterMenu->addAction(fuzzySearchAction);
 
- filterButton_->setMenu(filterMenu);
+  auto filterUIAction = new QAction("Filter UI only", filterButton_);
+  connect(filterUIAction, &QAction::triggered, updateFilterStatus);
+  filterUIAction->setCheckable(true);
+  filterActionGroup_->addAction(filterUIAction);
+  filterUIAction->setChecked(false);
+  filterMenu->addAction(filterUIAction);
+
+  filterButton_->setMenu(filterMenu);
 }
 
 void SCIRunMainWindow::setupScriptedEventsWindow()
@@ -393,16 +406,20 @@ void SCIRunMainWindow::setupProvenanceWindow()
 
 void SCIRunMainWindow::setupDevConsole()
 {
+  actionDevConsole_->setEnabled(false);
+  #if 0 // disable dev console for now
   devConsole_ = new DeveloperConsole(this);
   connect(actionDevConsole_, SIGNAL(toggled(bool)), devConsole_, SLOT(setVisible(bool)));
   connect(devConsole_, SIGNAL(visibilityChanged(bool)), actionDevConsole_, SLOT(setChecked(bool)));
+
   devConsole_->setVisible(false);
   devConsole_->setFloating(true);
   addDockWidget(Qt::TopDockWidgetArea, devConsole_);
+
   actionDevConsole_->setShortcut(QKeySequence("`"));
   connect(devConsole_, SIGNAL(executorChosen(int)), this, SLOT(setExecutor(int)));
   connect(devConsole_, SIGNAL(globalPortCachingChanged(bool)), this, SLOT(setGlobalPortCaching(bool)));
-  //NetworkEditor::setViewUpdateFunc([this](const QString& s) { devConsole_->updateNetworkViewLog(s); });
+  #endif
 }
 
 void SCIRunMainWindow::setupPreferencesWindow()
@@ -452,7 +469,7 @@ void SCIRunMainWindow::addFragmentsToMenu(const QMap<QString, QVariant>& names, 
     boost::tie(name, xml, key) = tup;
     subnet->setText(0, name.toString());
     subnet->setData(0, clipboardKey, xml.toString());
-		subnet->setTextColor(0, CLIPBOARD_COLOR);
+		subnet->setForeground(0, CLIPBOARD_COLOR);
 		savedSubnetworks->addChild(subnet);
 		setupSubnetItem(subnet, false, key);
   }
@@ -509,17 +526,18 @@ void SCIRunMainWindow::setupTagManagerWindow()
   tagManagerWindow_ = new TagManagerWindow(this);
   connect(actionTagManager_, SIGNAL(toggled(bool)), tagManagerWindow_, SLOT(setVisible(bool)));
   connect(tagManagerWindow_, SIGNAL(visibilityChanged(bool)), actionTagManager_, SLOT(setChecked(bool)));
-  tagManagerWindow_->hide();
+  tagManagerWindow_->setVisible(false);
+  addDockWidget(Qt::TopDockWidgetArea, tagManagerWindow_);
 }
+
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define QT5_VERSION_STRING "+Qt" TOSTRING(QT5_VERSION)
 
 void SCIRunMainWindow::setupVersionButton()
 {
   auto qVersion = QString::fromStdString(VersionInfo::GIT_VERSION_TAG);
-  #ifdef QT5_BUILD
-  qVersion += "+Qt5";
-  #else
-  qVersion += "+Qt4";
-  #endif
+  qVersion += QT5_VERSION_STRING;
   versionButton_ = new QPushButton("Version: " + qVersion);
   versionButton_->setFlat(true);
   versionButton_->setToolTip("Click to copy version tag to clipboard");

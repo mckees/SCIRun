@@ -3,9 +3,8 @@
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -26,16 +25,15 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
+
 SET(Algorithms_Visualization_SRCS
   DataConversions.cc
-  OsprayRenderAlgorithm.cc
   OsprayDataAlgorithm.cc
 )
 
 SET(Algorithms_Visualization_HEADERS
   DataConversions.h
   RenderFieldState.h
-  OsprayRenderAlgorithm.h
   OsprayDataAlgorithm.h
 )
 
@@ -48,12 +46,11 @@ TARGET_LINK_LIBRARIES(Core_Algorithms_Visualization
   Core_Datatypes
   Core_Datatypes_Legacy_Field
   Algorithms_Base
-  Graphics_Datatypes
   ${SCI_BOOST_LIBRARY}
 )
 
 IF(WITH_OSPRAY)
-  TARGET_LINK_LIBRARIES(Core_Algorithms_Visualization ${OSPRAY_LIBRARIES})
+  TARGET_LINK_LIBRARIES(Core_Algorithms_Visualization ospray::ospray)
 ENDIF()
 
 IF(BUILD_SHARED_LIBS)

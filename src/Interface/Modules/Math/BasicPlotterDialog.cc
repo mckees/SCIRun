@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2018 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <Interface/Modules/Math/BasicPlotterDialog.h>
 #include <Interface/Modules/Math/PlotDialog.h>
@@ -75,6 +75,10 @@ BasicPlotterDialog::BasicPlotterDialog(const std::string& name, ModuleStateHandl
   dataSeriesComboBox_->setDisabled(true);
 
   plotDialog_ = new PlotDialog(this);
+
+	//broken in Qt5
+	backgroundColorLabel_->hide();
+	backgroundColorPushButton_->hide();
 }
 
 BasicPlotterDialog::~BasicPlotterDialog()
@@ -95,7 +99,7 @@ void BasicPlotterDialog::pullSpecial()
   backgroundColor_ = colorFromState(Parameters::PlotBackgroundColor);
   plotDialog_->plot()->setCanvasBackground(backgroundColor_);
 
-	if (plotDialog_ && plotDialog_->isVisible())
+	if (plotDialog_->isVisible())
 		updatePlot();
 }
 

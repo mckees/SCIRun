@@ -14,63 +14,35 @@
 ## limitations under the License.                                           ##
 ## ======================================================================== ##
 
-#INCLUDE(${CMAKE_SOURCE_DIR}/CMake/Modules/FindOSPRay.cmake)
-INCLUDE_DIRECTORIES(${OSPRAY_INCLUDE_DIRS})
 
-IF(QT5_BUILD)
-  SET(QT_USE_QTOPENGL TRUE)
-  #INCLUDE(${QT_USE_FILE})
-  SET(LIBS ${LIBS} Qt5::OpenGL ${QT_LIBRARIES} ${OSPRAY_LIBRARIES})
-ELSE()
-  FIND_PACKAGE(Qt4 REQUIRED QtGui QtOpenGL)
-  SET(QT_USE_QTOPENGL TRUE)
-  INCLUDE(${QT_USE_FILE})
-  SET(LIBS ${LIBS} Qt4::QtGui Qt4::QtOpenGL ${QT_LIBRARIES} ${OSPRAY_LIBRARIES})
-ENDIF()
+SET(QT_USE_QTOPENGL TRUE)
+SET(LIBS ${LIBS} Qt5::OpenGL ${QT_LIBRARIES})
 
 FIND_PACKAGE(OpenGL REQUIRED)
 INCLUDE_DIRECTORIES(${OPENGL_INCLUDE_DIRS})
 SET(LIBS ${LIBS} ${OPENGL_LIBRARIES} ${TBB_LIBRARY_MALLOC} ${TBB_LIBRARY})
 
 SET(SRCS ${SRCS}
-  ColorMap.h
-  ColorMap.cpp
-  IsosurfaceEditor.cpp
-  IsovalueWidget.cpp
-  LightEditor.cpp
-  #LinearTransferFunctionWidget.cpp
-  OpenGLAnnotationRenderer.cpp
-  PreferencesDialog.cpp
-  ProbeWidget.cpp
-  QOSPRayWindow.cpp
-  SliceEditor.cpp
-  SliceWidget.cpp
-  #TransferFunctionEditor.cpp
-  VolumeViewer.cpp
-  util.h
-  util.cpp
-  importer/Importer.h
-  importer/Importer.cpp
-  importer/importOSP.cpp
-  importer/importRAW.cpp
-  importer/importRM.cpp
-  importer/TinyXML2.cpp
-  importer/TinyXML2.h
+  QOSPRayWidget.cpp
+  OSPRayRenderer.cpp
+  OSPRayDataManager.cpp
+  OSPRayCamera.cpp
+  #util.h
+  #util.cpp
+  #importer/Importer.h
+  #importer/Importer.cpp
+  #importer/importOSP.cpp
+  #importer/importRAW.cpp
+  #importer/importRM.cpp
+  #importer/TinyXML2.cpp
+  #importer/TinyXML2.h
 )
 
 SET(MOC_HEADERS
-  IsosurfaceEditor.h
-  IsovalueWidget.h
-  LightEditor.h
-  #LinearTransferFunctionWidget.h
-  OpenGLAnnotationRenderer.h
-  PreferencesDialog.h
-  ProbeWidget.h
-  QOSPRayWindow.h
-  SliceEditor.h
-  SliceWidget.h
-  #TransferFunctionEditor.h
-  VolumeViewer.h
+  QOSPRayWidget.h
+  OSPRayRenderer.h
+  OSPRayDataManager.h
+  OSPRayCamera.h
   share.h
 )
 
@@ -87,6 +59,7 @@ TARGET_LINK_LIBRARIES(Interface_Modules_Render_Ospray
   Core_Algorithms_Visualization
   Modules_Render
   ${LIBS}
+  ospray::ospray
 )
 
 IF(BUILD_SHARED_LIBS)

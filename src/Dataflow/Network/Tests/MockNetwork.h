@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #ifndef MOCK_NETWORK_H
 #define MOCK_NETWORK_H
@@ -54,7 +54,7 @@ namespace SCIRun {
           MOCK_CONST_METHOD0(nconnections, size_t());
           MOCK_METHOD1(disable_connection, void(const ConnectionId&));
           MOCK_CONST_METHOD0(toString, std::string());
-          MOCK_CONST_METHOD0(connections, ConnectionDescriptionList());
+          MOCK_CONST_METHOD1(connections, ConnectionDescriptionList(bool));
           MOCK_CONST_METHOD0(errorCode, int());
           MOCK_METHOD1(incrementErrorCode, void(const ModuleId&));
           MOCK_METHOD0(settings, NetworkGlobalSettings&());

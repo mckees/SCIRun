@@ -1,12 +1,10 @@
-
 #
 #  For more information, please see: http://software.sci.utah.edu
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -27,6 +25,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
+
 SET(Interface_Modules_Visualization_FORMS
   CreateStandardColorMap.ui
   GenerateStreamLines.ui
@@ -37,6 +36,7 @@ SET(Interface_Modules_Visualization_FORMS
   RescaleColorMap.ui
   ShowFieldWithOspray.ui
   ShowAndEditDipoles.ui
+  ShowMeshBoundingBox.ui
 )
 
 SET(Interface_Modules_Visualization_HEADERS
@@ -50,6 +50,7 @@ SET(Interface_Modules_Visualization_HEADERS
   RescaleColorMapDialog.h
   ShowFieldWithOsprayDialog.h
   ShowAndEditDipolesDialog.h
+  ShowMeshBoundingBoxDialog.h
 )
 
 SET(Interface_Modules_Visualization_SOURCES
@@ -62,6 +63,7 @@ SET(Interface_Modules_Visualization_SOURCES
   RescaleColorMapDialog.cc
   ShowFieldWithOsprayDialog.cc
   ShowAndEditDipolesDialog.cc
+  ShowMeshBoundingBoxDialog.cc
 )
 
 QT_WRAP_UI(Interface_Modules_Visualization_FORMS_HEADERS "${Interface_Modules_Visualization_FORMS}")

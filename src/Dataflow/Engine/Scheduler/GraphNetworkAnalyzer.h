@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #ifndef ENGINE_SCHEDULER_BOOST_GRAPH_NETWORK_ANALYZER_H
 #define ENGINE_SCHEDULER_BOOST_GRAPH_NETWORK_ANALYZER_H
@@ -66,8 +66,10 @@ namespace Engine {
     const NetworkGraph::DirectedGraph& graph();
     int moduleCount() const;
     NetworkGraph::ComponentMap connectedComponents();
+    std::vector<Networks::ModuleId> downstreamModules(const Networks::ModuleId& mid) const;
 
   private:
+    void fillDownstreamModules(const Networks::ModuleId& mid, std::vector<Networks::ModuleId>& downstream) const;
     const Networks::NetworkInterface& network_;
     Networks::ModuleFilter moduleFilter_;
 

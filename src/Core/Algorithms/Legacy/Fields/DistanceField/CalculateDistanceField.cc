@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <Core/Algorithms/Legacy/Fields/DistanceField/CalculateDistanceField.h>
 #include <Core/Algorithms/Base/AlgorithmVariableNames.h>
@@ -405,7 +405,7 @@ CalculateDistanceFieldAlgo::runImpl(FieldHandle input, FieldHandle object, Field
   }
 
   detail::CalculateDistanceFieldP palgo(imesh,objmesh,ofield,this);
-  auto task_i = [&palgo,this](int i) { palgo.parallel(i, Parallel::NumCores()); };
+  auto task_i = [&palgo](int i) { palgo.parallel(i, Parallel::NumCores()); };
   Parallel::RunTasks(task_i, Parallel::NumCores());
 
   return (true);
@@ -490,7 +490,7 @@ CalculateDistanceFieldAlgo::runImpl(FieldHandle input, FieldHandle object, Field
   }
 
   detail::CalculateDistanceFieldP palgo(imesh,objmesh,objfield,dfield,vfield,this);
-  auto task_i = [&palgo,this](int i) { palgo.parallel2(i, Parallel::NumCores()); };
+  auto task_i = [&palgo](int i) { palgo.parallel2(i, Parallel::NumCores()); };
   Parallel::RunTasks(task_i, Parallel::NumCores());
 
   return (true);

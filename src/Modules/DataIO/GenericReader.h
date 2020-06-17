@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -99,6 +98,7 @@ void GenericReader<HType, PortTag>::setStateDefaults()
   auto state = get_state();
   state->setValue(SCIRun::Core::Algorithms::Variables::Filename, std::string());
   state->setValue(SCIRun::Core::Algorithms::Variables::FileTypeName, defaultFileTypeName());
+  state->setValue(SCIRun::Core::Algorithms::Variables::GuiFileTypeName, std::string());
   state->setValue(SCIRun::Core::Algorithms::Variables::ScriptEnvironmentVariable, std::string());
 }
 

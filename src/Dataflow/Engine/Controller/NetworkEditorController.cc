@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -25,6 +24,8 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
+
 /// @todo Documentation Dataflow/Engine/Controller/NetworkEditorController.cc
 
 #include <iostream>
@@ -102,6 +103,7 @@ NetworkEditorController::~NetworkEditorController()
 #ifdef BUILD_WITH_PYTHON
   NetworkEditorPythonAPI::clearImpl();
 #endif
+  executionManager_.stop();
 }
 
 namespace
@@ -493,7 +495,7 @@ void NetworkEditorController::loadNetwork(const NetworkFileHandle& xml)
         auto disable(createDynamicPortSwitch());
         //this is handled by NetworkXMLConverter now--but now the logic is convoluted.
         //They need to be signaled again after the modules are signaled to alert the GUI. Hence the disabling of DPM
-        for (const auto& cd : theNetwork_->connections())
+        for (const auto& cd : theNetwork_->connections(true))
         {
           auto id = ConnectionId::create(cd);
           connectionAdded_(cd);
@@ -554,7 +556,7 @@ void NetworkEditorController::appendToNetwork(const NetworkFileHandle& xml)
     {
       NetworkXMLConverter conv(moduleFactory_, stateFactory_, algoFactory_, reexFactory_, this);
 
-      auto originalConnections = theNetwork_->connections();
+      auto originalConnections = theNetwork_->connections(true);
 
       auto info = conv.appendXmlData(xml->network);
       auto startIndex = info.newModuleStartIndex;
@@ -569,7 +571,7 @@ void NetworkEditorController::appendToNetwork(const NetworkFileHandle& xml)
         auto disable(createDynamicPortSwitch());
         //this is handled by NetworkXMLConverter now--but now the logic is convoluted.
         //They need to be signaled again after the modules are signaled to alert the GUI. Hence the disabling of DPM
-        for (const auto& cd : theNetwork_->connections())
+        for (const auto& cd : theNetwork_->connections(true))
         {
           if (std::find(originalConnections.begin(), originalConnections.end(), cd) == originalConnections.end())
           {

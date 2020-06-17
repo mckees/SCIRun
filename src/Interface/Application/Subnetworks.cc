@@ -3,7 +3,7 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
    Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,10 +25,10 @@
    DEALINGS IN THE SOFTWARE.
 */
 
+
 #include <sstream>
 #include <QtGui>
 #include <Interface/Application/NetworkEditor.h>
-#include <Interface/Application/Node.h>
 #include <Interface/Application/Connection.h>
 #include <Interface/Application/ModuleWidget.h>
 #include <Interface/Application/ModuleProxyWidget.h>
@@ -147,7 +147,7 @@ void NetworkEditor::removeSubnetPortHolders()
 
 std::vector<QGraphicsItem*> NetworkEditor::subnetItemsToMove()
 {
-  auto nonCompanionItems = scene_->items().toVector().toStdVector();
+  std::vector<QGraphicsItem*> nonCompanionItems(scene_->items().begin(), scene_->items().end());
 
   nonCompanionItems.erase(std::remove_if(nonCompanionItems.begin(), nonCompanionItems.end(),
     [](QGraphicsItem* item)
@@ -427,18 +427,31 @@ std::string SubnetModule::listComponentIds() const
 int SubnetModule::subnetCount_(0);
 const AlgorithmParameterName SubnetModule::ModuleInfo("ModuleInfo");
 
+//TODO: breaks older compilers. Will disable for now
+#if 0
+template <typename Iter>
+QSet<typename Iter::value_type> toSet(Iter b, Iter e)
+{
+  return QSet<typename Iter::value_type>(b, e);
+}
+#endif
+
 QList<QGraphicsItem*> NetworkEditor::includeConnections(QList<QGraphicsItem*> items) const
 {
-  auto subnetItems = items.toSet();
+  throw "not implemented";
+#if 0
+  auto subnetItems = toSet(items.begin(), items.end());
   Q_FOREACH(QGraphicsItem* item, items)
   {
     auto module = getModule(item);
     if (module)
     {
-      subnetItems.unite(module->connections().toSet());
+      auto cs = module->connections();
+      subnetItems.unite(toSet(cs.begin(), cs.end()));
     }
   }
-  return subnetItems.toList();
+  return subnetItems.values();
+#endif
 }
 
 namespace
@@ -613,11 +626,11 @@ void NetworkEditor::makeSubnetworkFromComponents(const QString& name, const std:
   moduleWidget->postLoadAction();
   //proxy->setScale(1.6);--problematic with port positions
 
-  auto colorize = new QGraphicsDropShadowEffect;
-  colorize->setColor(Qt::darkGray);
-  colorize->setOffset(5, 5);
-  colorize->setBlurRadius(2);
-  proxy->setGraphicsEffect(colorize);
+  auto dropShadow = new QGraphicsDropShadowEffect;
+  dropShadow->setColor(Qt::darkGray);
+  dropShadow->setOffset(5, 5);
+  dropShadow->setBlurRadius(2);
+  proxy->setGraphicsEffect(dropShadow);
 
   auto pic = grabSubnetPic(rect, items);
   auto tooltipPic = convertToTooltip(pic);
@@ -689,7 +702,7 @@ QPixmap NetworkEditor::grabSubnetPic(const QRectF& rect, const QList<QGraphicsIt
     }
   }
 
-  auto pic = QPixmap::grabWidget(this, mapFromScene(rect).boundingRect());
+  auto pic = grab(mapFromScene(rect).boundingRect());
 
   Q_FOREACH(QGraphicsItem* item, toHide)
   {

@@ -1,29 +1,30 @@
 /*
-  For more information, please see: http://software.sci.utah.edu
+   For more information, please see: http://software.sci.utah.edu
 
-  The MIT License
+   The MIT License
 
-  Copyright (c) 2015 Scientific Computing and Imaging Institute,
-  University of Utah.
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
+   University of Utah.
 
-  Permission is hereby granted, free of charge, to any person obtaining a
-  copy of this software and associated documentation files (the "Software"),
-  to deal in the Software without restriction, including without limitation
-  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-  and/or sell copies of the Software, and to permit persons to whom the
-  Software is furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included
-  in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
 
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-  DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <es-log/trace-log.h>
 #include <QtGui>
@@ -38,10 +39,8 @@
 #include <Interface/Application/SCIRunMainWindow.h>
 #include <Interface/Application/NetworkEditor.h>
 #include <Interface/Application/ProvenanceWindow.h>
-#include <Interface/Application/DeveloperConsole.h>
 #include <Interface/Application/Connection.h>
 #include <Interface/Application/PreferencesWindow.h>
-#include <Interface/Application/TagManagerWindow.h>
 #include <Interface/Application/ShortcutsInterface.h>
 #include <Interface/Application/TreeViewCollaborators.h>
 #include <Interface/Application/MainWindowCollaborators.h>
@@ -85,12 +84,14 @@ void SCIRunMainWindow::resizeEvent(QResizeEvent* event)
 {
   dockSpace_ = size().height();
   QMainWindow::resizeEvent(event);
-
-  //devConsole_->updateNetworkViewLog(tr("resizeEvent to %1,%2").arg(size().width()).arg(size().height()));
 }
 
 void SCIRunMainWindow::exitApplication(int code)
 {
+  if (Application::Instance().parameters()->saveViewSceneScreenshotsOnQuit())
+  {
+    networkEditor_->saveImages();
+  }
   close();
   returnCode_ = code;
   qApp->exit(code);
@@ -136,7 +137,7 @@ void SCIRunMainWindow::keyPressEvent(QKeyEvent *event)
 	if (event->key() == Qt::Key_Shift)
 	{
 		showStatusMessage("Network zoom active");
-    networkEditor_->adjustExecuteButtonsToDownstream(true);
+    networkEditor_->adjustExecuteButtonsToDownstream(!Preferences::Instance().moduleExecuteDownstreamOnly);
 	}
   else if (event->key() == MetadataShiftKey)
   {
@@ -220,7 +221,7 @@ void SCIRunMainWindow::keyReleaseEvent(QKeyEvent *event)
 	if (event->key() == Qt::Key_Shift)
 	{
 		showStatusMessage("Network zoom inactive", 1000);
-    networkEditor_->adjustExecuteButtonsToDownstream(false);
+    networkEditor_->adjustExecuteButtonsToDownstream(Preferences::Instance().moduleExecuteDownstreamOnly);
 	}
   else if (event->key() == MetadataShiftKey)
   {

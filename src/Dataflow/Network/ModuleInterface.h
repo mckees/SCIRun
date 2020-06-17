@@ -3,7 +3,7 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
    Permission is hereby granted, free of charge, to any person obtaining a
@@ -24,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #ifndef DATAFLOW_NETWORK_MODULE_INTERFACE_H
 #define DATAFLOW_NETWORK_MODULE_INTERFACE_H
@@ -89,6 +90,9 @@ namespace Networks {
     virtual bool isStoppable() const = 0;
     virtual bool executionDisabled() const = 0;
     virtual void setExecutionDisabled(bool disable) = 0;
+    virtual bool isImplementationDisabled() const = 0;
+    virtual void setProgrammableInputPortEnabled(bool enable) = 0;
+    virtual bool checkForVirtualConnection(const ModuleInterface& downstream) const = 0;
   };
 
   class SCISHARE ModuleInterface :

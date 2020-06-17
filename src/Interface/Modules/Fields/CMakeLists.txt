@@ -1,12 +1,10 @@
-
 #
 #  For more information, please see: http://software.sci.utah.edu
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -26,6 +24,7 @@
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+
 
 SET(Interface_Modules_Fields_FORMS
   CreateLatVol.ui
@@ -135,6 +134,7 @@ SET(Interface_Modules_Fields_HEADERS
   CreateImageDialog.h
   GetCentroidsFromMeshDialog.h
   CalculateMeshNodesDialog.h
+  InterfaceWithTetGenDialog.h
 )
 
 SET(Interface_Modules_Fields_SOURCES
@@ -189,16 +189,8 @@ SET(Interface_Modules_Fields_SOURCES
   CreateImageDialog.cc
   GetCentroidsFromMeshDialog.cc
   CalculateMeshNodesDialog.cc
+  InterfaceWithTetGenDialog.cc
 )
-
-IF(WITH_TETGEN)
-  SET(Interface_Modules_Fields_SOURCES ${Interface_Modules_Fields_SOURCES}
-    InterfaceWithTetGenDialog.cc
-  )
-  SET(Interface_Modules_Fields_HEADERS ${Interface_Modules_Fields_HEADERS}
-    InterfaceWithTetGenDialog.h
-  )
-ENDIF(WITH_TETGEN)
 
 QT_WRAP_UI(Interface_Modules_Fields_FORMS_HEADERS "${Interface_Modules_Fields_FORMS}")
 QT_WRAP_CPP(Interface_Modules_Fields_HEADERS_MOC "${Interface_Modules_Fields_HEADERS}")

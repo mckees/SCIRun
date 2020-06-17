@@ -1,29 +1,30 @@
 /*
-For more information, please see: http://software.sci.utah.edu
+   For more information, please see: http://software.sci.utah.edu
 
-The MIT License
+   The MIT License
 
-Copyright (c) 2015 Scientific Computing and Imaging Institute,
-University of Utah.
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
+   University of Utah.
 
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the "Software"),
-to deal in the Software without restriction, including without limitation
-the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <Interface/Modules/Base/CustomWidgets/CodeEditorWidgets.h>
 #include <Modules/Python/PythonInterfaceParser.h>
@@ -56,7 +57,7 @@ int CodeEditor::lineNumberAreaWidth()
     ++digits;
   }
 
-  int space = 3 + fontMetrics().width(QLatin1Char('9')) * digits;
+  int space = 3 + fontMetrics().WIDTH_FUNC(QLatin1Char('9')) * digits;
 
   return space;
 }
@@ -137,6 +138,19 @@ void CodeEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
   }
 }
 
+namespace
+{
+  const char LEFT_PARENTHESIS = '(';
+  const char RIGHT_PARENTHESIS = ')';
+  const MatchingPair parentheses = { LEFT_PARENTHESIS, RIGHT_PARENTHESIS };
+  const char LEFT_BRACKET = '[';
+  const char RIGHT_BRACKET = ']';
+  const MatchingPair brackets = { LEFT_BRACKET, RIGHT_BRACKET };
+  const char LEFT_BRACE = '{';
+  const char RIGHT_BRACE = '}';
+  const MatchingPair braces = { LEFT_BRACE, RIGHT_BRACE };
+}
+
 void CodeEditor::matchParentheses()
 {
   QList<QTextEdit::ExtraSelection> selections;
@@ -145,23 +159,26 @@ void CodeEditor::matchParentheses()
 
   if (data)
   {
-    auto infos = data->parentheses();
-    for (int i = 0; i < infos.size(); ++i)
+    for (const auto& type : { parentheses, brackets, braces })
     {
-      auto info = infos[i];
-      int curPos = textCursor().position() - textCursor().block().position();
-      if (info.position == curPos - 1 && info.character == '(')
+      auto infos = data->parentheses(type);
+      for (int i = 0; i < infos.size(); ++i)
       {
-        if (!matchLeftParenthesis(textCursor().block(), i + 1, 0))
+        auto info = infos[i];
+        int curPos = textCursor().position() - textCursor().block().position();
+        if (info.position == curPos - 1 && info.character == type.left)
         {
-          createParenthesisSelection(info.position, Qt::red);
+          if (!matchLeftParenthesis(type, textCursor().block(), i + 1, 0))
+          {
+            createParenthesisSelection(textCursor().block().position() + info.position, Qt::red);
+          }
         }
-      }
-      else if (info.position == curPos - 1 && info.character == ')')
-      {
-        if (!matchRightParenthesis(textCursor().block(), i - 1, 0))
+        else if (info.position == curPos - 1 && info.character == type.right)
         {
-          createParenthesisSelection(info.position, Qt::red);
+          if (!matchRightParenthesis(type, textCursor().block(), i - 1, 0))
+          {
+            createParenthesisSelection(textCursor().block().position() + info.position, Qt::red);
+          }
         }
       }
     }
@@ -276,38 +293,41 @@ void Highlighter::highlightBlock(const QString &text)
 void Highlighter::highlightBlockParens(const QString &text)
 {
   auto data = new TextBlockData;
-  int leftPos = text.indexOf('(');
-  while (leftPos != -1)
+  for (const auto& type : { parentheses, brackets, braces })
   {
-    data->insert({'(', leftPos});
-    leftPos = text.indexOf('(', leftPos + 1);
-  }
-  int rightPos = text.indexOf(')');
-  while (rightPos != -1)
-  {
-    data->insert({ ')', rightPos });
-    rightPos = text.indexOf(')', rightPos + 1);
+    int leftPos = text.indexOf(type.left);
+    while (leftPos != -1)
+    {
+      data->insert(type, {type.left, leftPos});
+      leftPos = text.indexOf(type.left, leftPos + 1);
+    }
+    int rightPos = text.indexOf(type.right);
+    while (rightPos != -1)
+    {
+      data->insert(type, { type.right, rightPos });
+      rightPos = text.indexOf(type.right, rightPos + 1);
+    }
   }
   setCurrentBlockUserData(data);
 }
 
-bool CodeEditor::matchLeftParenthesis(QTextBlock currentBlock, int i, int numLeftParentheses)
+bool CodeEditor::matchLeftParenthesis(const MatchingPair& type, QTextBlock currentBlock, int i, int numLeftParentheses)
 {
   auto data = static_cast<TextBlockData *>(currentBlock.userData());
-  auto infos = data->parentheses();
+  auto infos = data->parentheses(type);
 
   int docPos = currentBlock.position();
   for (; i < infos.size(); ++i)
   {
     auto info = infos[i];
 
-    if (info.character == '(')
+    if (info.character == type.left)
     {
       ++numLeftParentheses;
       continue;
     }
 
-    if (info.character == ')' && numLeftParentheses == 0)
+    if (info.character == type.right && numLeftParentheses == 0)
     {
       createParenthesisSelection(docPos + info.position, Qt::green);
       return true;
@@ -318,26 +338,26 @@ bool CodeEditor::matchLeftParenthesis(QTextBlock currentBlock, int i, int numLef
 
   currentBlock = currentBlock.next();
   if (currentBlock.isValid())
-    return matchLeftParenthesis(currentBlock, 0, numLeftParentheses);
+    return matchLeftParenthesis(type, currentBlock, 0, numLeftParentheses);
 
   return false;
 }
 
-bool CodeEditor::matchRightParenthesis(QTextBlock currentBlock, int i, int numRightParentheses)
+bool CodeEditor::matchRightParenthesis(const MatchingPair& type, QTextBlock currentBlock, int i, int numRightParentheses)
 {
   auto data = static_cast<TextBlockData *>(currentBlock.userData());
-  auto parentheses = data->parentheses();
+  auto bracketData = data->parentheses(type);
 
   int docPos = currentBlock.position();
-  for (; i > -1 && parentheses.size() > 0; --i)
+  for (; i > -1 && bracketData.size() > 0; --i)
   {
-    auto info = parentheses.at(i);
-    if (info.character == ')')
+    auto info = bracketData.at(i);
+    if (info.character == type.right)
     {
       ++numRightParentheses;
       continue;
     }
-    if (info.character == '(' && numRightParentheses == 0)
+    if (info.character == type.left && numRightParentheses == 0)
     {
       createParenthesisSelection(docPos + info.position, Qt::green);
       return true;
@@ -348,7 +368,7 @@ bool CodeEditor::matchRightParenthesis(QTextBlock currentBlock, int i, int numRi
 
   currentBlock = currentBlock.previous();
   if (currentBlock.isValid())
-    return matchRightParenthesis(currentBlock, 0, numRightParentheses);
+    return matchRightParenthesis(type, currentBlock, 0, numRightParentheses);
 
   return false;
 }
@@ -357,17 +377,24 @@ TextBlockData::TextBlockData()
 {
 }
 
-std::vector<ParenthesisInfo> TextBlockData::parentheses() const
+bool SCIRun::Gui::operator<(const MatchingPair& lhs, const MatchingPair& rhs)
 {
-  return m_parentheses;
+  return std::make_tuple(lhs.left, lhs.right) < std::make_tuple(rhs.left, rhs.right);
+}
+
+std::vector<ParenthesisInfo> TextBlockData::parentheses(const MatchingPair& type) const
+{
+  auto loc = parenthesesByType_.find(type);
+  return loc != parenthesesByType_.end() ? loc->second : std::vector<ParenthesisInfo>();
 }
 
 
-void TextBlockData::insert(ParenthesisInfo&& info)
+void TextBlockData::insert(const MatchingPair& type, ParenthesisInfo&& info)
 {
+  auto& parens = parenthesesByType_[type];
   int i = 0;
-  while (i < m_parentheses.size() && info.position > m_parentheses[i].position)
+  while (i < parens.size() && info.position > parens[i].position)
     ++i;
 
-  m_parentheses.insert(m_parentheses.begin() + i, info);
+  parens.insert(parens.begin() + i, info);
 }

@@ -3,7 +3,7 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
    Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,6 +25,7 @@
    DEALINGS IN THE SOFTWARE.
 */
 
+
 #ifndef INTERFACE_MODULES_CalculateInsideWhichFieldDialog_H
 #define INTERFACE_MODULES_CalculateInsideWhichFieldDialog_H
 
@@ -44,6 +45,10 @@ public:
   CalculateInsideWhichFieldDialog(const std::string& name,
     SCIRun::Dataflow::Networks::ModuleStateHandle state,
     QWidget* parent = 0);
+protected:
+  virtual void pullSpecial() override;
+private Q_SLOTS:
+  void setUseNanForUnassignedValues(int state);
 };
 
 }

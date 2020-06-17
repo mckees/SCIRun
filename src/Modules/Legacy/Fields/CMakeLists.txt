@@ -3,9 +3,8 @@
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -25,6 +24,7 @@
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+
 
 # CMakeLists.txt for Dataflow/Modules/Fields
 
@@ -96,12 +96,14 @@ SET(Modules_Legacy_Fields_HEADERS
   GetCentroidsFromMesh.h
   SmoothVecFieldMedian.h
   CalculateMeshNodes.h
+  GenerateElectrode.h
+  InterfaceWithTetGen.h
 )
 
 SET(Modules_Legacy_Fields_SRCS
   FlipSurfaceNormals.cc
   ClipVolumeByIsovalue.cc
-  #GenerateElectrode.cc
+  GenerateElectrode.cc
   #PadRegularMesh.cc
   ResampleRegularMesh.cc
   #CalculateMeshConnector.cc
@@ -208,17 +210,17 @@ SET(Modules_Legacy_Fields_SRCS
   MapFieldDataFromNodeToElem.cc
   ExtractSimpleIsosurface.cc
   ReorderNormalCoherently.cc
+  InterfaceWithTetGen.cc  
 )
 
 IF(WITH_TETGEN)
   SET(Modules_Legacy_Fields_SRCS ${Modules_Legacy_Fields_SRCS}
-    InterfaceWithTetGen.cc
     InterfaceWithTetGenImpl.cc
   )
   SET(Modules_Legacy_Fields_HEADERS ${Modules_Legacy_Fields_HEADERS}
-    InterfaceWithTetGen.h
     InterfaceWithTetGenImpl.h
   )
+  ADD_DEFINITIONS(-DWITH_TETGEN)
 ENDIF()
 
 SCIRUN_ADD_LIBRARY(Modules_Legacy_Fields

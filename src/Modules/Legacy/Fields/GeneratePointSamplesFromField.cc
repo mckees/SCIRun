@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -24,7 +23,8 @@
    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
-   */
+*/
+
 
 ///
 ///@file  GeneratePointSamplesFromField.cc
@@ -36,20 +36,20 @@
 ///@date  November 2004
 ///
 
-#include <Modules/Legacy/Fields/GeneratePointSamplesFromField.h>
-#include <Modules/Legacy/Fields/GenerateSinglePointProbeFromField.h>
-#include <Core/Datatypes/Legacy/Field/Mesh.h>
-#include <Core/Datatypes/Legacy/Field/VMesh.h>
-#include <Core/Datatypes/Legacy/Field/VField.h>
+#include <Core/Datatypes/DenseMatrix.h>
 #include <Core/Datatypes/Legacy/Field/Field.h>
 #include <Core/Datatypes/Legacy/Field/FieldInformation.h>
-#include <Core/GeometryPrimitives/Point.h>
+#include <Core/Datatypes/Legacy/Field/Mesh.h>
+#include <Core/Datatypes/Legacy/Field/VField.h>
+#include <Core/Datatypes/Legacy/Field/VMesh.h>
 #include <Core/GeometryPrimitives/BBox.h>
-#include <Graphics/Widgets/SphereWidget.h>
-#include <Core/Datatypes/DenseMatrix.h>
+#include <Core/GeometryPrimitives/Point.h>
 #include <Core/Logging/Log.h>
-#include <boost/regex.hpp>
+#include <Graphics/Widgets/WidgetBuilders.h>
+#include <Modules/Legacy/Fields/GeneratePointSamplesFromField.h>
+#include <Modules/Legacy/Fields/GenerateSinglePointProbeFromField.h>
 #include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
 
 using namespace SCIRun;
 using namespace Core;
@@ -78,7 +78,7 @@ namespace SCIRun
       {
       public:
         BBox last_bounds_;
-        std::vector<SphereWidgetHandle> pointWidgets_;
+        std::vector<WidgetHandle> pointWidgets_;
         std::vector<Transform> previousTransforms_;
         double l2norm_;
 
@@ -126,7 +126,11 @@ void GeneratePointSamplesFromField::execute()
 {
   sendOutput(GeneratedPoints, GenerateOutputField());
 
-  auto geom = WidgetFactory::createComposite(*this, "multiple_spheres", impl_->pointWidgets_.begin(), impl_->pointWidgets_.end());
+  std::vector<GeometryHandle> geom_list;
+  for(auto w : impl_->pointWidgets_)
+    geom_list.push_back(w);
+
+  auto geom = createGeomComposite(*this, "multiple_spheres", geom_list.begin(), geom_list.end());
   sendOutput(GeneratedWidget, geom);
 }
 
@@ -233,13 +237,15 @@ FieldHandle GeneratePointSamplesFromField::GenerateOutputField()
         if (i < positions.size())
           location = pointFromString(positions[i].toString());
 
-        auto seed = boost::dynamic_pointer_cast<SphereWidget>(WidgetFactory::createSphere(*this,
-          widgetName(i),
-          scale,
-          "Color(0.5,0.5,0.5)",
-          location,
-          bbox,
-          10));
+        auto seed = SphereWidgetBuilder(*this)
+          .tag(widgetName(i))
+          .scale(scale)
+          .defaultColor("Color(0.5,0.5,0.5)")
+          .origin(location)
+          .boundingBox(bbox)
+          .resolution(10)
+          .centerPoint(location)
+          .build();
         impl_->pointWidgets_.push_back(seed);
       }
     }
@@ -247,18 +253,20 @@ FieldHandle GeneratePointSamplesFromField::GenerateOutputField()
   }
   else
   {
-    std::vector<SphereWidgetHandle> newWidgets;
+    std::vector<WidgetHandle> newWidgets;
     int counter = 0;
     moveCount_++;
     for (const auto& oldWidget : impl_->pointWidgets_)
     {
-      auto seed = boost::dynamic_pointer_cast<SphereWidget>(WidgetFactory::createSphere(*this,
-        widgetName(counter++) + std::string(moveCount_, ' '),
-        scale,
-        "Color(0.5,0.5,0.5)",
-        oldWidget->position(),
-        bbox,
-        10));
+      auto seed = SphereWidgetBuilder(*this)
+        .tag(widgetName(counter++) + std::string(moveCount_, ' '))
+        .scale(scale)
+        .defaultColor("Color(0.5,0.5,0.5)")
+        .origin(oldWidget->position())
+        .boundingBox(bbox)
+        .resolution(10)
+        .centerPoint(oldWidget->position())
+        .build();
       newWidgets.push_back(seed);
     }
     impl_->pointWidgets_ = newWidgets;

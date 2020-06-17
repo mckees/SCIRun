@@ -1,30 +1,30 @@
 /*
-  For more information, please see: http://software.sci.utah.edu
+   For more information, please see: http://software.sci.utah.edu
 
-  The MIT License
+   The MIT License
 
-  Copyright (c) 2015 Scientific Computing and Imaging Institute,
-  University of Utah.
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
+   University of Utah.
 
-  License for the specific language governing rights and limitations under
-  Permission is hereby granted, free of charge, to any person obtaining a
-  copy of this software and associated documentation files (the "Software"),
-  to deal in the Software without restriction, including without limitation
-  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-  and/or sell copies of the Software, and to permit persons to whom the
-  Software is furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included
-  in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
 
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-  DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <es-log/trace-log.h>
 #include <Interface/qt_include.h>
@@ -39,7 +39,6 @@
 #include <Interface/Application/SCIRunMainWindow.h>
 #include <Interface/Application/NetworkEditor.h>
 #include <Interface/Application/ProvenanceWindow.h>
-#include <Interface/Application/DeveloperConsole.h>
 #include <Interface/Application/Connection.h>
 #include <Interface/Application/PreferencesWindow.h>
 #include <Interface/Application/TagManagerWindow.h>
@@ -101,33 +100,6 @@ SCIRunMainWindow::SCIRunMainWindow()
   QCoreApplication::setApplicationName("SCIRun5");
 
   setAttribute(Qt::WA_DeleteOnClose);
-
-  setStyleSheet(
-    "background-color: rgb(66,66,69);"
-    "color: white;"
-    "selection-color: yellow;"
-    "selection-background-color: blue;"//336699 lighter blue
-    "QToolBar {        background-color: rgb(66,66,69); border: 1px solid black; color: black;     }"
-    "QProgressBar {        background-color: rgb(66,66,69); border: 0px solid black; color: black  ;   }"
-    "QDockWidget {background: rgb(66,66,69); background-color: rgb(66,66,69); }"
-    "QPushButton {"
-    "  border: 2px solid #8f8f91;"
-    "  border - radius: 6px;"
-    "  background - color: qlineargradient(x1 : 0, y1 : 0, x2 : 0, y2 : 1,"
-    "  stop : 0 #f6f7fa, stop: 1 #dadbde);"
-    "  min - width: 80px;"
-    "}"
-    "QPushButton:pressed{"
-    "background - color: qlineargradient(x1 : 0, y1 : 0, x2 : 0, y2 : 1,"
-    "stop : 0 #dadbde, stop: 1 #f6f7fa);"
-    "}"
-    "QPushButton:flat{"
-    "          border: none; /* no border for a flat push button */"
-    "}"
-    "QPushButton:default {"
-    "border - color: navy; /* make the default button prominent */"
-    "}"
-  );
 
   menubar_->setStyleSheet("QMenuBar::item::selected{background-color : rgb(66, 66, 69); } QMenuBar::item::!selected{ background-color : rgb(66, 66, 69); } ");
 
@@ -228,6 +200,7 @@ SCIRunMainWindow::SCIRunMainWindow()
 	connect(helpActionTagLayer_, SIGNAL(triggered()), this, SLOT(showTagHelp()));
 	connect(helpActionTriggeredScripts_, SIGNAL(triggered()), this, SLOT(showTriggerHelp()));
   connect(helpActionNewUserWizard_, SIGNAL(triggered()), this, SLOT(launchNewUserWizard()));
+  connect(helpActionPythonWizard_, SIGNAL(triggered()), this, SLOT(launchPythonWizard()));
 
   connect(actionReset_Window_Layout, SIGNAL(triggered()), this, SLOT(resetWindowLayout()));
   connect(actionToggleFullScreenMode_, SIGNAL(triggered()), this, SLOT(toggleFullScreen()));
@@ -285,6 +258,20 @@ SCIRunMainWindow::SCIRunMainWindow()
   connect(actionZoomIn_, SIGNAL(triggered()), this, SLOT(zoomNetwork()));
   connect(actionZoomOut_, SIGNAL(triggered()), this, SLOT(zoomNetwork()));
   connect(actionZoomBestFit_, SIGNAL(triggered()), this, SLOT(zoomNetwork()));
+
+  auto dimFunc = [this](const char* type)
+  {
+    return [this, type]()
+    {
+      showStatusMessage(QString("Dimming connections of type ") + type, NetworkEditor::ConnectionHideTimeMS_);
+      networkEditor_->hidePipesByType(type);
+    };
+  };
+  connect(actionHideFieldPipes_, &QAction::triggered, dimFunc("Field"));
+  connect(actionHideMatrixPipes_, &QAction::triggered, dimFunc("Matrix"));
+  connect(actionHideStringPipes_, &QAction::triggered, dimFunc("String"));
+  connect(actionHideGeometryPipes_, &QAction::triggered, dimFunc("Geometry"));
+  connect(actionHideColorMapPipes_, &QAction::triggered, dimFunc("ColorMap"));
 
   actionCut_->setIcon(QPixmap(":/general/Resources/cut.png"));
   actionCopy_->setIcon(QPixmap(":/general/Resources/copy.png"));

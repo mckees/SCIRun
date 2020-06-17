@@ -1,35 +1,36 @@
 /*
-For more information, please see: http://software.sci.utah.edu
+   For more information, please see: http://software.sci.utah.edu
 
-The MIT License
+   The MIT License
 
-Copyright (c) 2015 Scientific Computing and Imaging Institute,
-University of Utah.
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
+   University of Utah.
 
-License for the specific language governing rights and limitations under
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the "Software"),
-to deal in the Software without restriction, including without limitation
-the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
 */
+
 
 #ifndef INTERFACE_MODULES_VIEW_SCENE_CONTROLS_H
 #define INTERFACE_MODULES_VIEW_SCENE_CONTROLS_H
 
 #include "Interface/Modules/Render/ui_ViewSceneControls.h"
+#include "Interface/Modules/Render/ViewScene.h"
 
 #ifndef Q_MOC_RUN
 #include <Core/Datatypes/DatatypeFwd.h>
@@ -42,38 +43,6 @@ DEALINGS IN THE SOFTWARE.
 namespace SCIRun {
   namespace Gui {
     class ViewSceneDialog;
-
-    class LightControlCircle : public QGraphicsView
-    {
-      Q_OBJECT
-    public:
-      explicit LightControlCircle(QGraphicsScene* scene, int index,
-        const boost::atomic<bool>& pulling, QRectF sceneRect,
-        QWidget* parent = nullptr);
-
-      void setMovable(bool canMove);
-      QPointF getLightPosition() const;
-      QColor getColor() const;
-
-    Q_SIGNALS:
-      void lightMoved(int index);
-      void colorChanged(int index);
-    protected:
-      virtual void mousePressEvent(QMouseEvent* event) override;
-      virtual void mouseMoveEvent(QMouseEvent* event) override;
-
-    private:
-      int index_;
-      int previousX_, previousY_;
-      QGraphicsItem* boundingCircle_;
-      QGraphicsItem* lightPosition_;
-      const boost::atomic<bool>& dialogPulling_;
-      QColor lightColor_;
-
-      void selectLightColor();
-      void setColor(const QColor& color);
-
-    };
 
     class VisibleItemManager : public QObject
     {
@@ -107,6 +76,7 @@ namespace SCIRun {
       ViewSceneControlsDock(const QString& name, ViewSceneDialog* parent);
       void setSampleColor(const QColor& color);
       void setFogColorLabel(const QColor& color);
+      void setLabelColor(QLabel* label, const QColor& color);
       void setMaterialTabValues(double ambient, double diffuse, double specular, double shine, double emission,
         bool fogVisible, bool objectsOnly, bool useBGColor, double fogStart, double fogEnd);
       void setScaleBarValues(bool visible, int fontSize, double length, double height, double multiplier,
@@ -116,20 +86,31 @@ namespace SCIRun {
       void updateZoomOptionVisibility();
       void updatePlaneSettingsDisplay(bool visible, bool showPlane, bool reverseNormal);
       void updatePlaneControlDisplay(double x, double y, double z, double d);
-      QPointF getLightPosition(int index) const;
       QColor getLightColor(int index) const;
 
       VisibleItemManager& visibleItems() { return *visibleItems_; }
 
     private:
       void setupObjectListWidget();
-      void setupLightControlCircle(QFrame* frame, int index, const boost::atomic<bool>& pulling, bool moveable);
+      QColor lightColors[4];
 
-      std::vector<LightControlCircle*> lightControls_;
       std::unique_ptr<VisibleItemManager> visibleItems_;
+
+    Q_SIGNALS:
+      void updateLightColor(const int index);
+
     private Q_SLOTS:
+      void selectLightColor(int index);
+      void selectLight0Color() {selectLightColor(0);}
+      void selectLight1Color() {selectLightColor(1);}
+      void selectLight2Color() {selectLightColor(2);}
+      void selectLight3Color() {selectLightColor(3);}
       void setSliderDefaultPos();
       void setSliderCenterPos();
+      void updateViewSceneTree();
+      void addGroup();
+      void removeGroup();
+      void viewSceneTreeClicked(QTreeWidgetItem* widgetItem, int column);
 
     };
   }

@@ -3,7 +3,7 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
    Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,6 +25,7 @@
    DEALINGS IN THE SOFTWARE.
 */
 
+
 #include <memory>
 #include <numeric>
 #include <boost/lexical_cast.hpp>
@@ -34,6 +35,8 @@
 #include <atomic>
 
 #include <Core/Algorithms/Base/AlgorithmPreconditions.h>
+#include <Core/Algorithms/Base/AlgorithmVariableNames.h>
+#include <Core/Datatypes/MetadataObject.h>
 #include <Dataflow/Network/PortManager.h>
 #include <Dataflow/Network/ModuleStateInterface.h>
 #include <Dataflow/Network/Module.h>
@@ -62,6 +65,12 @@ using namespace SCIRun::Core::Thread;
 std::string SCIRun::Dataflow::Networks::to_string(const ModuleInfoProvider& m)
 {
   return m.name() + " [" + m.id().id_ + "]";
+}
+
+PortId SCIRun::Dataflow::Networks::ProgrammablePortId()
+{
+  static PortId preexecute{ 1000, "PreexecuteCode" };
+  return preexecute;
 }
 
 namespace detail
@@ -230,6 +239,7 @@ Module::Module(const ModuleLookupInfo& info,
     setReexecutionStrategy(reexFactory->create(*this));
 
   impl_->executionState_->transitionTo(ModuleExecutionState::NotExecuted);
+  setProgrammableInputPortEnabled(false);
 }
 
 void Module::setId(const std::string& id)
@@ -362,6 +372,9 @@ void Module::copyStateToMetadata()
 bool Module::executeWithSignals() NOEXCEPT
 {
   auto starting = "STARTING MODULE: " + id().id_;
+
+  runProgrammablePortInput();
+
 #ifdef BUILD_HEADLESS //TODO: better headless logging
   static Mutex executeLogLock("headlessExecution");
   if (!LogSettings::Instance().verbose())
@@ -470,6 +483,20 @@ bool Module::executeWithSignals() NOEXCEPT
   return impl_->returnCode_;
 }
 
+void Module::runProgrammablePortInput()
+{
+  auto prog = getOptionalInputAtIndex<MetadataObject>(ProgrammablePortId());
+  if (prog && *prog)
+  {
+    //logCritical("MetadataObject found! {}", id().id_);
+    (*prog)->process(id());
+  }
+  else
+  {
+    //logCritical("\tMetadataObject NOT found! {}", id().id_);
+  }
+}
+
 ModuleStateHandle Module::get_state()
 {
   return impl_->state_;
@@ -489,8 +516,13 @@ void Module::setState(ModuleStateHandle state)
     impl_->state_->overwriteWith(*state);
   }
   initStateObserver(impl_->state_.get());
-  postStateChangeInternalSignalHookup();
+  postStateChangeInternalSignalHookup(); //TODO--add prog port default with this
   copyStateToMetadata();
+}
+
+void Module::postStateChangeInternalSignalHookup()
+{
+  setProgrammableInputPortEnabled(false);
 }
 
 AlgorithmBase& Module::algo()
@@ -1108,6 +1140,11 @@ void Module::sendFeedbackUpstreamAlongIncomingConnections(const ModuleFeedback& 
       connection->oport_->sendConnectionFeedback(feedback);
     }
   }
+}
+
+void Module::setProgrammableInputPortEnabled(bool enable)
+{
+  get_state()->setValue(Variables::ProgrammableInputPortEnabled, enable);
 }
 
 std::string Module::helpPageUrl() const

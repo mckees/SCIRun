@@ -3,9 +3,8 @@
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -26,9 +25,13 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
+
 SET(Interface_Modules_Render_Tests_SRCS
   SRInterfaceTests.cc
   VarBufferTests.cc
+  ObjectTranslationTests.cc
+  ObjectRotationTests.cc
+  ObjectScalingTests.cc
 )
 
 SCIRUN_ADD_UNIT_TEST(Interface_Modules_Render_Tests

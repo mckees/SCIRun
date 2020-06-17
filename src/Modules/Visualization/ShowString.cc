@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -25,6 +24,8 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
+
 /// @todo Documentation Modules/Visualization/ShowString.cc
 
 #include <Modules/Visualization/ShowString.h>
@@ -176,7 +177,7 @@ GeometryBaseHandle ShowString::buildGeometryObject(const std::string& text)
   uniforms.push_back(SpireSubPass::Uniform("uXTranslate", xTrans));
   uniforms.push_back(SpireSubPass::Uniform("uYTranslate", yTrans));
 
-  SpireVBO geomVBO(vboName, attribs, vboBufferSPtr, 0, BBox(), true);
+  SpireVBO geomVBO(vboName, attribs, vboBufferSPtr, 0, BBox(Point{}, Point{}), true);
   SpireIBO geomIBO(iboName, SpireIBO::PRIMITIVE::TRIANGLES, sizeof(uint32_t), iboBufferSPtr);
 
   RenderState renState;

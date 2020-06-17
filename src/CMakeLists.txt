@@ -3,9 +3,8 @@
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -24,6 +23,8 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
+#
+
 
 IF(UNIX)
   # temporary - needed to make Travis CI build work
@@ -50,6 +51,10 @@ ENDIF()
 
 PROJECT(SCIRun)
 
+IF(GENERATE_COMPILATION_DATABASE)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+ENDIF()
+
 ###############################################################################
 # Don't allow the user to build in the src directory...
 #
@@ -67,13 +72,6 @@ ENDIF()
 
 OPTION(BUILD_SHARED_LIBS "Build shared libraries" ON)
 MARK_AS_ADVANCED(BUILD_SHARED_LIBS)
-
-########################################################################
-# Headless build
-#
-#OPTION(BUILD_HEADLESS "Build headless version, without Qt" OFF)
-#MARK_AS_ADVANCED(BUILD_HEADLESS)
-
 
 ########################################################################
 # Set default CMAKE_BUILD_TYPE
@@ -119,8 +117,8 @@ string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\-(beta.[A-Za-z0-9_]+)\\-?.*" "\\1" VERS
 #MESSAGE(STATUS "Git version patch name: " "${VERSION_PATCH}")
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules/Version.cc.in
- ${CMAKE_CURRENT_SOURCE_DIR}/Core/Application/Version.cc)
-set(version_file "${CMAKE_CURRENT_SOURCE_DIR}/Core/Application/Version.cc")
+ ${CMAKE_CURRENT_BINARY_DIR}/Core/Application/Version.cc)
+set(version_file "${CMAKE_CURRENT_BINARY_DIR}/Core/Application/Version.cc")
 
 
 ########################################################################
@@ -266,6 +264,11 @@ IF(WITH_TETGEN)
   INCLUDE(${TETGEN_USE_FILE})
 ENDIF()
 
+IF(WITH_OSPRAY)
+  set(ospray_DIR ${Ospray_External_Dir}/install/ospray/lib/cmake/ospray-2.0.1)
+  find_package(ospray 2.0.0 REQUIRED HINTS ${Ospray_External_Dir}/install/ospray)
+ENDIF()
+
 IF(WIN32)
   CONFIG_STANDARD_EXTERNAL( Glew GlewConfig.cmake ${GLEW_DIR} )
   INCLUDE(${GLEW_USE_FILE})
@@ -328,17 +331,11 @@ MARK_AS_ADVANCED(BUILD_BUNDLE)
 
 # should be installed by default, searching system paths only
 IF(APPLE)
-  IF(QT5_BUILD)
-    FIND_PROGRAM(MACDEPLOYQT
-      HINTS ${Qt5_PATH} ${Qt5_PATH}/bin
-      NAMES macdeployqt
-      NO_DEFAULT_PATH
-    )
-  ELSE()
-    FIND_PROGRAM(MACDEPLOYQT
-      NAMES macdeployqt
-    )
-  ENDIF()
+  FIND_PROGRAM(MACDEPLOYQT
+    HINTS ${Qt5_PATH} ${Qt5_PATH}/bin
+    NAMES macdeployqt
+    NO_DEFAULT_PATH
+  )
   MARK_AS_ADVANCED(MACDEPLOYQT)
 
   SET(MACDEPLOYQT_OUTPUT_LEVEL 0 CACHE STRING "Set macdeployqt output level (0-3)")
@@ -386,24 +383,10 @@ ENDIF()
 # ENDIF()
 
 ########################################################################
-# Configure tetgen module build
-
-IF(WITH_TETGEN)
-  ADD_DEFINITIONS(-DWITH_TETGEN)
-ENDIF()
-
-########################################################################
-# Configure ospray module build-- TODO: convert into real external
+# Configure ospray module build
 
 IF(WITH_OSPRAY)
   ADD_DEFINITIONS(-DWITH_OSPRAY)
-  SET(OSPRAY_INCLUDE_DIRS
-    "${SCIRun_SOURCE_DIR}/Externals/submodules/ospray"
-    "${SCIRun_SOURCE_DIR}/Externals/submodules/ospray/components"
-    "${SCIRun_SOURCE_DIR}/Externals/submodules/ospray/ospray/include"
-    "${SCIRun_BINARY_DIR}/Externals/submodules/ospray"
-    )
-  #message(${OSPRAY_INCLUDE_DIRS})
   SET(OSPRAY_LIBRARIES ospray)
 ENDIF()
 
@@ -479,91 +462,58 @@ FIND_PACKAGE(OpenGL REQUIRED)
 ########################################################################
 # Find and configure Qt
 
-IF(QT5_BUILD)
-  ADD_DEFINITIONS(-DQT5_BUILD)
-ENDIF()
-
-# TODO: exclude for headless
 IF(NOT BUILD_HEADLESS)
-  IF(NOT QT5_BUILD)
-    FIND_PACKAGE(Qt4 COMPONENTS QtMain QtCore QtGui QtNetwork QtOpenGL QtSvg REQUIRED)
+  FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets Network OpenGL Concurrent PrintSupport Svg REQUIRED HINTS ${Qt5_PATH})
 
-    IF(QT_FOUND)
-      INCLUDE_DIRECTORIES(${QT_INCLUDE_DIR})
-      INCLUDE(${QT_USE_FILE})
-      ADD_DEFINITIONS(${QT_DEFINITIONS})
-    ELSE()
-      MESSAGE(FATAL_ERROR "QT 4.8 or greater is required to build SCIRun")
-    ENDIF()
-
+  IF(Qt5Core_FOUND)
+    MESSAGE(STATUS "Found Qt version: ${Qt5Core_VERSION_STRING}")
+    ADD_DEFINITIONS(-DQT5_VERSION=${Qt5Core_VERSION_STRING})
+    INCLUDE_DIRECTORIES(${Qt5Core_INCLUDE_DIRS})
+	  INCLUDE_DIRECTORIES(${Qt5Widgets_INCLUDE_DIRS})
+    INCLUDE_DIRECTORIES(${Qt5Gui_INCLUDE_DIRS})
+    INCLUDE_DIRECTORIES(${Qt5Network_INCLUDE_DIRS})
+    INCLUDE_DIRECTORIES(${Qt5OpenGL_INCLUDE_DIRS})
+    INCLUDE_DIRECTORIES(${Qt5Concurrent_INCLUDE_DIRS})
+    INCLUDE_DIRECTORIES(${Qt5PrintSupport_INCLUDE_DIRS})
+    INCLUDE_DIRECTORIES(${Qt5Svg_INCLUDE_DIRS})
+    ADD_DEFINITIONS(${Qt5Core_DEFINITIONS})
+    ADD_DEFINITIONS(${Qt5Widgets_DEFINITIONS})
+    ADD_DEFINITIONS(${Qt5Gui_DEFINITIONS})
+    ADD_DEFINITIONS(${Qt5Network_DEFINITIONS})
+    ADD_DEFINITIONS(${Qt5OpenGL_DEFINITIONS})
+    ADD_DEFINITIONS(${Qt5Concurrent_DEFINITIONS})
+    ADD_DEFINITIONS(${Qt5PrintSupport_DEFINITIONS})
+    ADD_DEFINITIONS(${Qt5Svg_DEFINITIONS})
+    SET(QT_LIBRARIES Qt5::Widgets)
   ELSE()
-    FIND_PACKAGE(Qt5Core REQUIRED HINTS ${Qt5_PATH})
-    FIND_PACKAGE(Qt5Gui REQUIRED HINTS ${Qt5_PATH})
-    FIND_PACKAGE(Qt5Widgets REQUIRED HINTS ${Qt5_PATH})
-    FIND_PACKAGE(Qt5Network REQUIRED HINTS ${Qt5_PATH})
-    FIND_PACKAGE(Qt5OpenGL REQUIRED HINTS ${Qt5_PATH})
-    FIND_PACKAGE(Qt5Concurrent REQUIRED HINTS ${Qt5_PATH})
-	FIND_PACKAGE(Qt5PrintSupport REQUIRED HINTS ${Qt5_PATH})
-	FIND_PACKAGE(Qt5Svg REQUIRED HINTS ${Qt5_PATH})
+    MESSAGE(FATAL_ERROR "Qt5 is required for building the SCIRun GUI")
+  ENDIF()
 
-    IF(Qt5Core_FOUND)
-      MESSAGE(STATUS "Found Qt version: ${Qt5Core_VERSION_STRING}")
-    	INCLUDE_DIRECTORIES(${Qt5Core_INCLUDE_DIRS})
-  	  INCLUDE_DIRECTORIES(${Qt5Widgets_INCLUDE_DIRS})
-      INCLUDE_DIRECTORIES(${Qt5Gui_INCLUDE_DIRS})
-      INCLUDE_DIRECTORIES(${Qt5Network_INCLUDE_DIRS})
-      INCLUDE_DIRECTORIES(${Qt5OpenGL_INCLUDE_DIRS})
-      INCLUDE_DIRECTORIES(${Qt5Concurrent_INCLUDE_DIRS})
-	  INCLUDE_DIRECTORIES(${Qt5PrintSupport_INCLUDE_DIRS})
-      INCLUDE_DIRECTORIES(${Qt5Svg_INCLUDE_DIRS})
-      ADD_DEFINITIONS(${Qt5Core_DEFINITIONS})
-      ADD_DEFINITIONS(${Qt5Widgets_DEFINITIONS})
-      ADD_DEFINITIONS(${Qt5Gui_DEFINITIONS})
-      ADD_DEFINITIONS(${Qt5Network_DEFINITIONS})
-      ADD_DEFINITIONS(${Qt5OpenGL_DEFINITIONS})
-      ADD_DEFINITIONS(${Qt5Concurrent_DEFINITIONS})
-	  ADD_DEFINITIONS(${Qt5PrintSupport_DEFINITIONS})
-	  ADD_DEFINITIONS(${Qt5Svg_DEFINITIONS})
-      SET(QT_LIBRARIES Qt5::Widgets)
-    ELSE()
-      MESSAGE(FATAL_ERROR "Qt5 is required for building the SCIRun GUI")
-    ENDIF()
-
-    IF(Qt5Core_FOUND)
-      INCLUDE_DIRECTORIES(${QT_INCLUDE_DIR})
-      #INCLUDE(${QT_USE_FILE})
-      ADD_DEFINITIONS(${QT_DEFINITIONS})
-    ELSE()
-      MESSAGE(FATAL_ERROR "QT 5.8 or greater is required to build SCIRun")
-    ENDIF()
+  IF(Qt5Core_FOUND)
+    INCLUDE_DIRECTORIES(${QT_INCLUDE_DIR})
+    ADD_DEFINITIONS(${QT_DEFINITIONS})
+  ELSE()
+    MESSAGE(FATAL_ERROR "QT 5.13 or greater is required to build SCIRun")
   ENDIF()
 
   ADD_DEFINITIONS(-DQT_NO_KEYWORDS)
 
   MACRO(QT_WRAP_UI arg1 arg2)
-    IF(QT5_BUILD)
-      QT5_WRAP_UI(${arg1} ${arg2})
-    ELSE()
-      QT4_WRAP_UI(${arg1} ${arg2})
-    ENDIF()
+    QT5_WRAP_UI(${arg1} ${arg2})
   ENDMACRO(QT_WRAP_UI)
 
   MACRO(QT_WRAP_CPP arg1 arg2)
-    IF(QT5_BUILD)
-      QT5_WRAP_CPP(${arg1} ${arg2})
-    ELSE()
-      QT4_WRAP_CPP(${arg1} ${arg2})
-    ENDIF()
+    QT5_WRAP_CPP(${arg1} ${arg2})
   ENDMACRO(QT_WRAP_CPP)
 
   MACRO(QT_ADD_RESOURCES arg1 arg2)
-    IF(QT5_BUILD)
-      QT5_ADD_RESOURCES(${arg1} ${arg2})
-    ELSE()
-      QT4_ADD_RESOURCES(${arg1} ${arg2})
-    ENDIF()
+    QT5_ADD_RESOURCES(${arg1} ${arg2})
   ENDMACRO(QT_ADD_RESOURCES)
 
+ENDIF()
+
+IF(TRAVIS_BUILD OR Qt5Widgets_VERSION VERSION_LESS 5.13.0)
+  ADD_DEFINITIONS(-DOLDER_QT_SUPPORT_NEEDED)
 ENDIF()
 
 ########################################################################
@@ -601,10 +551,6 @@ INCLUDE_DIRECTORIES(
   ${SCI_QWT_INCLUDE}
   ${SCI_CLEAVER2_INCLUDE}
 )
-
-IF(WITH_OSPRAY)
-  INCLUDE_DIRECTORIES(${OSPRAY_INCLUDE_DIRS})
-ENDIF()
 
 INCLUDE_DIRECTORIES(SYSTEM ${SCI_BOOST_INCLUDE})
 
@@ -785,7 +731,7 @@ SET_PROPERTY(TARGET Core_XMLUtil         PROPERTY FOLDER "Core")
 SET_PROPERTY(TARGET Core_Exceptions_Legacy         PROPERTY FOLDER "Core")
 SET_PROPERTY(TARGET Core_Util_Legacy         PROPERTY FOLDER "Core")
 SET_PROPERTY(TARGET Core_Containers         PROPERTY FOLDER "Core")
-SET_PROPERTY(TARGET Core_Thread_Legacy         PROPERTY FOLDER "Core")
+#SET_PROPERTY(TARGET Core_Thread_Legacy         PROPERTY FOLDER "Core")
 SET_PROPERTY(TARGET Core_Serialization_Network         PROPERTY FOLDER "Dataflow/Serialization")
 SET_PROPERTY(TARGET Core_Serialization_Network_Importer         PROPERTY FOLDER "Dataflow/Serialization")
 SET_PROPERTY(TARGET bundle_toolkit         PROPERTY FOLDER "Dataflow/Serialization")
@@ -840,12 +786,14 @@ SET_PROPERTY(TARGET Graphics_Glyphs   PROPERTY FOLDER "Graphics")
 SET_PROPERTY(TARGET Graphics_Widgets   PROPERTY FOLDER "Graphics")
 SET_PROPERTY(TARGET Graphics_Datatypes   PROPERTY FOLDER "Graphics")
 
-SET_PROPERTY(TARGET gmock         PROPERTY FOLDER "Testing Support")
-SET_PROPERTY(TARGET gmock_main   PROPERTY FOLDER "Testing Support")
-SET_PROPERTY(TARGET gtest         PROPERTY FOLDER "Testing Support")
-SET_PROPERTY(TARGET gtest_main   PROPERTY FOLDER "Testing Support")
-SET_PROPERTY(TARGET Testing_Utils PROPERTY FOLDER "Testing Support")
-SET_PROPERTY(TARGET Testing_ModuleTestBase PROPERTY FOLDER "Testing Support")
+IF(BUILD_TESTING OR TRAVIS_BUILD)
+  SET_PROPERTY(TARGET gmock         PROPERTY FOLDER "Testing Support")
+  SET_PROPERTY(TARGET gmock_main   PROPERTY FOLDER "Testing Support")
+  SET_PROPERTY(TARGET gtest         PROPERTY FOLDER "Testing Support")
+  SET_PROPERTY(TARGET gtest_main   PROPERTY FOLDER "Testing Support")
+  SET_PROPERTY(TARGET Testing_Utils PROPERTY FOLDER "Testing Support")
+  SET_PROPERTY(TARGET Testing_ModuleTestBase PROPERTY FOLDER "Testing Support")
+ENDIF()
 
 IF(BUILD_TESTING)
 

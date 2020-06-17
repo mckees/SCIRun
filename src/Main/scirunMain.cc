@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 //Uncomment line below to check for memory leaks (run in debug mode VS)
 //#define LOOK_FOR_MEMORY_LEAKS
@@ -63,6 +63,7 @@ int mainImpl(int argc, const char* argv[], char **environment)
 #endif
 
   //TODO: must read --headless flag here, or try pushing command queue building all the way up here
+  //TODO: https://doc.qt.io/qt-5/qapplication.html#details
 #ifndef BUILD_HEADLESS
   return GuiApplication::run(argc, argv);
 #else

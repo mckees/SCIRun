@@ -3,9 +3,8 @@
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -26,21 +25,30 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
+
 SET(Graphics_Widgets_SRCS
   Widget.cc
+  WidgetFactory.cc
   BoundingBoxWidget.cc
   SphereWidget.cc
   CylinderWidget.cc
   ConeWidget.cc
   DiskWidget.cc
+  ArrowWidget.cc
+  GlyphFactory.cc
 )
 
 SET(Graphics_Widgets_HEADERS
   Widget.h
+  WidgetFactory.h
   BoundingBoxWidget.h
   SphereWidget.h
   CylinderWidget.h
   ConeWidget.h
+  ArrowWidget.h
+  GlyphFactory.h
+  WidgetParameters.h
+  WidgetBuilders.h
   share.h
 )
 
@@ -64,3 +72,5 @@ IF(BUILD_SHARED_LIBS)
 ENDIF(BUILD_SHARED_LIBS)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+SCIRUN_ADD_TEST_DIR(Tests)

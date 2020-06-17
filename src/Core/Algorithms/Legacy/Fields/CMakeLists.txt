@@ -3,9 +3,8 @@
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -25,6 +24,7 @@
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+
 
 SET(Core_Algorithms_Legacy_Fields_HEADERS
   ClipMesh/ClipMeshBySelection.h
@@ -127,7 +127,7 @@ SET(Core_Algorithms_Legacy_Fields_SRCS
   #CompareFields/CompareFields.cc
   #CompareFields/SimilarMeshes.cc
   #CreateMesh/CreateMeshFromNrrd.cc
-  
+
   DistanceField/CalculateDistanceField.cc
   DistanceField/CalculateIsInsideField.cc
   DistanceField/CalculateInsideWhichFieldAlgorithm.cc
@@ -236,14 +236,6 @@ TARGET_LINK_LIBRARIES(Core_Algorithms_Legacy_Fields
   Core_Basis
   Algorithms_Math
 )
-
-IF(FALSE)
-  IF(WITH_TETGEN)
-    TARGET_LINK_LIBRARIES(Core_Algorithms_Legacy_Fields
-      ${TETGEN_LIBRARY}
-    )
-  ENDIF()
-ENDIF()
 
 IF(BUILD_SHARED_LIBS)
   ADD_DEFINITIONS(-DBUILD_Core_Algorithms_Legacy_Fields)

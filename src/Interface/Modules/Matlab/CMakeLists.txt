@@ -1,12 +1,10 @@
-
 #
 #  For more information, please see: http://software.sci.utah.edu
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -27,11 +25,13 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
+
 SET(Interface_Modules_Matlab_FORMS
   ImportDatatypesFromMatlab.ui
   ImportFieldsFromMatlab.ui
   ImportMatricesFromMatlab.ui
   ExportFieldsToMatlab.ui
+  ExportMatricesToMatlab.ui
 )
 
 SET(Interface_Modules_Matlab_HEADERS
@@ -39,6 +39,7 @@ SET(Interface_Modules_Matlab_HEADERS
   ImportFieldsFromMatlabDialog.h
   ImportMatricesFromMatlabDialog.h
   ExportFieldsToMatlabDialog.h
+  ExportMatricesToMatlabDialog.h
   share.h
 )
 
@@ -47,6 +48,7 @@ SET(Interface_Modules_Matlab_SOURCES
   ImportFieldsFromMatlabDialog.cc
   ImportMatricesFromMatlabDialog.cc
   ExportFieldsToMatlabDialog.cc
+  ExportMatricesToMatlabDialog.cc
 )
 
 QT_WRAP_UI(Interface_Modules_Matlab_FORMS_HEADERS "${Interface_Modules_Matlab_FORMS}")

@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 /// @todo Documentation Dataflow/Network/NetworkInterface.h
 
@@ -88,7 +88,7 @@ namespace Networks {
     virtual bool disconnect(const ConnectionId&) = 0;
     virtual size_t nconnections() const = 0;
     virtual void disable_connection(const ConnectionId&) = 0;
-    virtual ConnectionDescriptionList connections() const = 0;
+    virtual ConnectionDescriptionList connections(bool includeVirtual) const = 0;
     virtual void incrementErrorCode(const ModuleId& moduleId) = 0;
     virtual NetworkGlobalSettings& settings() = 0;
     virtual void setModuleExecutionState(ModuleExecutionState::Value state, ModuleFilter filter) = 0;

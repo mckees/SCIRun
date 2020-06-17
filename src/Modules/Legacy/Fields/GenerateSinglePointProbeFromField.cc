@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -26,15 +25,16 @@
    DEALINGS IN THE SOFTWARE.
 */
 
-#include <Modules/Legacy/Fields/GenerateSinglePointProbeFromField.h>
+
 #include <Core/Datatypes/Color.h>
+#include <Core/Datatypes/Legacy/Field/Field.h>
+#include <Core/Datatypes/Legacy/Field/FieldInformation.h>
+#include <Core/Datatypes/Legacy/Field/Mesh.h>
+#include <Core/Datatypes/Legacy/Field/VField.h>
 #include <Core/GeometryPrimitives/BBox.h>
 #include <Core/GeometryPrimitives/Point.h>
-#include <Core/Datatypes/Legacy/Field/Field.h>
-#include <Core/Datatypes/Legacy/Field/VField.h>
-#include <Core/Datatypes/Legacy/Field/Mesh.h>
-#include <Core/Datatypes/Legacy/Field/FieldInformation.h>
-#include <Graphics/Widgets/Widget.h>
+#include <Graphics/Widgets/WidgetBuilders.h>
+#include <Modules/Legacy/Fields/GenerateSinglePointProbeFromField.h>
 // ReSharper disable once CppUnusedIncludeDirective
 #include <Core/Datatypes/Scalar.h>
 #include <Core/Datatypes/DenseMatrix.h>
@@ -478,7 +478,14 @@ GeometryHandle GenerateSinglePointProbeFromFieldImpl::buildWidgetObject(FieldHan
   mesh->begin(eiter);
   Point point;
   mesh->get_point(point, *eiter);
-  return WidgetFactory::createSphere(idGenerator, "GSPPFF",
-    radius, state->getValue(Parameters::ProbeColor).toString(),
-    point, mesh->get_bounding_box(), 10);
+
+  return SphereWidgetBuilder(idGenerator)
+    .tag("GSPPFF")
+    .scale(radius)
+    .defaultColor(state->getValue(Parameters::ProbeColor).toString())
+    .origin(point)
+    .boundingBox(mesh->get_bounding_box())
+    .resolution(10)
+    .centerPoint(point)
+    .build();
 }

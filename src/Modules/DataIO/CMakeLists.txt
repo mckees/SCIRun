@@ -3,9 +3,8 @@
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -26,6 +25,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
+
 SET(Modules_DataIO_SRCS
   ReadField.cc
   ReadBundle.cc
@@ -33,6 +33,7 @@ SET(Modules_DataIO_SRCS
   WriteField.cc
   WriteG3D.cc
   WriteMatrix.cc
+  ReadFile.cc
 )
 
 SET(Modules_DataIO_HEADERS
@@ -44,6 +45,7 @@ SET(Modules_DataIO_HEADERS
   WriteField.h
   WriteG3D.h
   WriteMatrix.h
+  ReadFile.h
 )
 
 SCIRUN_ADD_LIBRARY(Modules_DataIO

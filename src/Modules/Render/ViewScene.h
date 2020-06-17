@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -26,6 +25,7 @@
    DEALINGS IN THE SOFTWARE.
 */
 
+
 #ifndef MODULES_RENDER_VIEWSCENE_H
 #define MODULES_RENDER_VIEWSCENE_H
 
@@ -33,7 +33,6 @@
 #include <Core/Thread/Mutex.h>
 #include <Core/Algorithms/Base/AlgorithmMacros.h>
 #include <Modules/Render/share.h>
-#include <glm/glm.hpp>
 
 namespace SCIRun
 {
@@ -44,6 +43,7 @@ namespace SCIRun
       namespace Render
       {
         ALGORITHM_PARAMETER_DECL(GeomData);
+        ALGORITHM_PARAMETER_DECL(VSMutex);
         ALGORITHM_PARAMETER_DECL(GeometryFeedbackInfo);
         ALGORITHM_PARAMETER_DECL(ScreenshotData);
         ALGORITHM_PARAMETER_DECL(MeshComponentSelection);
@@ -78,6 +78,7 @@ namespace Render {
   {
   public:
     ViewScene();
+    ~ViewScene();
     virtual void asyncExecute(const Dataflow::Networks::PortId& pid, Core::Datatypes::DatatypeHandle data) override;
     virtual void setStateDefaults() override;
 
@@ -129,6 +130,7 @@ namespace Render {
     static const Core::Algorithms::AlgorithmParameterName Light3Inclination;
     static const Core::Algorithms::AlgorithmParameterName ShowViewer;
     static const Core::Algorithms::AlgorithmParameterName CameraDistance;
+    static const Core::Algorithms::AlgorithmParameterName CameraDistanceMinimum;
     static const Core::Algorithms::AlgorithmParameterName CameraLookAt;
     static const Core::Algorithms::AlgorithmParameterName CameraRotation;
 
@@ -142,6 +144,7 @@ namespace Render {
     MODULE_TRAITS_AND_INFO(ModuleHasUI)
 
     static Core::Thread::Mutex mutex_;
+    Core::Thread::Mutex screenShotMutex_ {"ViewSceneScreenShotMutex"};
 
     typedef SharedPointer<Core::Datatypes::GeomList> GeomListPtr;
     typedef std::map<Dataflow::Networks::PortId, Core::Datatypes::GeometryBaseHandle> ActiveGeometryMap;
@@ -153,8 +156,8 @@ namespace Render {
     void fireTransientStateChangeSignalForGeomData();
     void updateTransientList();
     void syncMeshComponentFlags(const std::string& connectedModuleId, Dataflow::Networks::ModuleStateHandle state);
+
     ActiveGeometryMap activeGeoms_;
-    std::atomic<int> asyncUpdates_;
   };
 }}}
 

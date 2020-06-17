@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -25,6 +24,8 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
+
 /// @todo Documentation Dataflow/Engine/Controller/PythonImpl.cc
 
 #ifdef BUILD_WITH_PYTHON
@@ -440,6 +441,8 @@ namespace
             return boost::python::object(transient_value_cast<bool>(v));
           if (transient_value_check<Variable>(v))
             return boost::python::object(convertVariableToPythonObject(transient_value_cast<Variable>(v)));
+          if (transient_value_check<boost::python::object>(v))
+            return transient_value_cast<boost::python::object>(v);
 
           return boost::python::object();
         }
@@ -612,7 +615,7 @@ boost::shared_ptr<PyModule> PythonImpl::findModule(const std::string& id) const
 
 std::string PythonImpl::executeAll(const ExecutableLookup* lookup)
 {
-  cmdFactory_->create(GlobalCommands::DisableViewScenes)->execute();
+  //cmdFactory_->create(GlobalCommands::DisableViewScenes)->execute();
 
   nec_.executeAll(lookup);
   return "Execution started."; //TODO: attach log for execution ended event.

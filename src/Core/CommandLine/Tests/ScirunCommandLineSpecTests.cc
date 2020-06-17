@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <gtest/gtest.h>
 #include <Core/CommandLine/CommandLine.h>
@@ -46,12 +46,14 @@ TEST(ScirunCommandLineSpecTest, CanReadBasicOptions)
     "  -r [ --regression ] arg regression test a network\n"
     "  -1 [ --most-recent ]    load the most recently used file\n"
     "  -i [ --interactive ]    interactive mode\n"
+    "  -z [ --save-images ]    save all ViewScene images before quitting\n"
     "  -x [ --headless ]       disable GUI\n"
     "  --input-file arg        SCIRun Network Input File\n"
     "  -s [ --script ] arg     Python script--interpret and drop into embedded \n"
     "                          console\n"
     "  -S [ --Script ] arg     Python script--interpret and quit after one SCIRun \n"
     "                          execution pass\n"
+    "  --import arg            Import a network from SCIRun 4.7\n"
     "  -0 [ --no_splash ]      Turn off splash screen\n"
     "  --verbose               Turn on debug log information\n"
     "  --guiExpandFactor arg   Expansion factor for high resolution displays\n"
@@ -186,5 +188,15 @@ TEST(ScirunCommandLineSpecTest, CanReadBasicOptions)
     EXPECT_TRUE(!!aph->pythonScriptFile());
     EXPECT_EQ("scr1.py", *aph->pythonScriptFile());
     EXPECT_TRUE(aph->quitAfterOneScriptedExecution());
+  }
+
+  {
+    const char* argv[] = { "scirun.exe", "--import", "oldnetwork.srn" };
+    int argc = sizeof(argv) / sizeof(char*);
+
+    auto aph = parser.parse(argc, argv);
+
+    EXPECT_TRUE(!!aph->importNetworkFile());
+    EXPECT_EQ("oldnetwork.srn", *aph->importNetworkFile());
   }
 }

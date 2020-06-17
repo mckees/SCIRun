@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <Core/Thread/Parallel.h>
 #include <Core/Thread/Barrier.h>
@@ -1156,7 +1156,7 @@ MapFieldDataOntoElemsAlgo::runImpl(FieldHandle source, FieldHandle weights, Fiel
   if (valuestr == "interpolateddataonly") algo.has_nan_ = true;
 
   // Parallel algorithm
-  auto task_i = [&algo,this](int i) { algo.parallel(i); };
+  auto task_i = [&algo](int i) { algo.parallel(i); };
   Parallel::RunTasks(task_i, Parallel::NumCores());
 
   // Check whether algorithm succeeded
@@ -1284,7 +1284,7 @@ MapFieldDataOntoElemsAlgo::runImpl(FieldHandle source, FieldHandle destination, 
   if (valuestr == "interpolateddataonly") algo.has_nan_ = true;
 
   // Parallel algorithm
-  auto task_i = [&algo,this](int i) { algo.parallel(i); };
+  auto task_i = [&algo](int i) { algo.parallel(i); };
   Parallel::RunTasks(task_i, Parallel::NumCores());
 
  // Check whether algorithm succeeded

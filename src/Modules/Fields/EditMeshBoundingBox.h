@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -24,12 +23,15 @@
    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
-   */
+*/
+
 
 #ifndef MODULES_FIELDS_EDITMESHBOUNDINGBOX_H
 #define MODULES_FIELDS_EDITMESHBOUNDINGBOX_H
 
 #include <Dataflow/Network/GeometryGeneratingModule.h>
+#include <Graphics/Datatypes/GeometryImpl.h>
+#include <Graphics/Widgets/Widget.h>
 #include <Core/Datatypes/Geometry.h>
 #include <Modules/Fields/share.h>
 
@@ -94,7 +96,7 @@ namespace SCIRun {
         void clear_vals();
         void update_input_attributes(FieldHandle);
         void computeWidgetBox(const Core::Geometry::BBox& box) const;
-        Core::Datatypes::GeometryBaseHandle buildGeometryObject();
+        Graphics::Datatypes::GeometryHandle buildGeometryObject();
         void processWidgetFeedback(const Core::Datatypes::ModuleFeedback& var);
         void adjustGeometryFromTransform(const Core::Geometry::Transform& transformMatrix);
 

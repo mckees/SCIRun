@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -26,6 +25,7 @@
    DEALINGS IN THE SOFTWARE.
 */
 
+
 #include <Interface/Modules/Visualization/ShowFieldWithOsprayDialog.h>
 #include <Modules/Visualization/ShowFieldWithOspray.h>
 #include <Core/Algorithms/Visualization/OsprayDataAlgorithm.h>
@@ -39,7 +39,7 @@ using namespace SCIRun::Core::Datatypes;
 using namespace SCIRun::Core::Geometry;
 using namespace SCIRun::Modules::Visualization;
 using namespace SCIRun::Core::Algorithms;
-using namespace SCIRun::Core::Algorithms::Visualization::Parameters;
+using namespace SCIRun::Core::Algorithms::OsprayVisualization::Parameters;
 
 ShowFieldWithOsprayDialog::ShowFieldWithOsprayDialog(const std::string& name, ModuleStateHandle state,
   QWidget* parent /* = 0 */)
@@ -57,4 +57,3 @@ ShowFieldWithOsprayDialog::ShowFieldWithOsprayDialog(const std::string& name, Mo
   addCheckBoxManager(UseNormalCheckBox_, UseNormals);
   addCheckBoxManager(ShowEdgesCheckBox_, ShowEdges);
 }
-

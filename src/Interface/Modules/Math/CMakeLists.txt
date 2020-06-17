@@ -3,9 +3,8 @@
 #
 #  The MIT License
 #
-#  Copyright (c) 2017 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -25,6 +24,7 @@
 #  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #  DEALINGS IN THE SOFTWARE.
 #
+
 
 SET(Interface_Modules_Math_FORMS
   SelectSubMatrix.ui
@@ -133,9 +133,8 @@ TARGET_LINK_LIBRARIES(Interface_Modules_Math
   ${SCI_QWT_LIBRARY}
   )
 
-IF(QT5_BUILD)
-  ADD_DEFINITIONS(-DQWT_DLL)
-ENDIF()
+
+ADD_DEFINITIONS(-DQWT_DLL)
 
 IF(BUILD_SHARED_LIBS)
   ADD_DEFINITIONS(-DBUILD_Interface_Modules_Math)

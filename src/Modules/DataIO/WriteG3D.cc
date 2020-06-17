@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -25,6 +24,8 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
+
 /// @todo Documentation Modules/DataIO/WriteG3D.cc
 
 
@@ -62,7 +63,7 @@ WriteG3D::WriteG3D()
   //TODO: change from hard coded types to getting the correct group from the list exporter
   auto types = makeGuiTypesListForExport(mgr);
   types = "IV3D (*.g3d);;ObjToField (*.obj)";
-  get_state()->setValue(Variables::FileTypeList, types);
+  get_state()->setTransientValue(Variables::FileTypeList, types);
 }
 
 void WriteG3D::setStateDefaults()

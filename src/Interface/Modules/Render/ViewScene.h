@@ -1,30 +1,30 @@
 /*
-For more information, please see: http://software.sci.utah.edu
+   For more information, please see: http://software.sci.utah.edu
 
-The MIT License
+   The MIT License
 
-Copyright (c) 2015 Scientific Computing and Imaging Institute,
-University of Utah.
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
+   University of Utah.
 
-License for the specific language governing rights and limitations under
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the "Software"),
-to deal in the Software without restriction, including without limitation
-the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
 */
+
 
 #ifndef INTERFACE_MODULES_VIEW_SCENE_H
 #define INTERFACE_MODULES_VIEW_SCENE_H
@@ -33,11 +33,15 @@ DEALINGS IN THE SOFTWARE.
 #define NOMINMAX
 
 #include "Interface/Modules/Render/ui_ViewScene.h"
+#include <Interface/Modules/Render/ViewSceneManager.h>
+#include <atomic>
 
 #include <Modules/Visualization/TextBuilder.h>
 #include <Interface/Modules/Base/ModuleDialogGeneric.h>
 #include <Interface/Modules/Render/ViewSceneControlsDock.h>
 #include <Graphics/Datatypes/GeometryImpl.h>
+#include <Interface/Modules/Render/ES/RendererInterfaceCollaborators.h>
+#include <Interface/Modules/Render/ES/RendererInterfaceFwd.h>
 #include <Interface/Modules/Render/share.h>
 
 //TODO: needs to inherit from ModuleWidget somehow
@@ -47,40 +51,55 @@ class QStandardItem;
 class QGLWidget;
 
 namespace SCIRun {
-  namespace Render { class SRInterface; }
   namespace Gui {
 
     class GLWidget;
     class ViewSceneControlsDock;
-
+    class ScopedWidgetColorChanger;
 
     class SCISHARE ViewSceneDialog : public ModuleDialogGeneric, public Ui::ViewScene
     {
     Q_OBJECT;
 
-
     public:
       ViewSceneDialog(const std::string& name, Dataflow::Networks::ModuleStateHandle state,
         QWidget* parent = nullptr);
+      ~ViewSceneDialog();
 
       std::string toString(std::string prefix) const;
       void adjustToolbar() override;
-
+      
+      static ViewSceneManager viewSceneManager;
+      void inputMouseDownHelper(Render::MouseButton btn, float x, float y);
+      void inputMouseMoveHelper(Render::MouseButton btn, float x, float y);
+      void inputMouseUpHelper();
+      void inputMouseWheelHelper(int32_t delta);
+      void setViewScenesToUpdate(const std::unordered_set<ViewSceneDialog*>& scenes);
+      std::string getName() {return name_;}
+      void autoSaveScreenshot();
 
     Q_SIGNALS:
       void newGeometryValueForwarder();
       void cameraRotationChangeForwarder();
       void cameraLookAtChangeForwarder();
       void cameraDistnaceChangeForwarder();
-      void mousePressSignalForTestingGeometryObjectFeedback(int x, int y, const std::string& selName);
-
+      void lockMutexForwarder();
+      void mousePressSignalForGeometryObjectFeedback(int x, int y, const std::string& selName);
 
     protected Q_SLOTS:
+      void printToString() const {std::cout << toString("");}
+      void sendBugReport();
+
       //---------------- New Geometry --------------------------------------------------------------
       void updateModifiedGeometries();
+      void updateModifiedGeometriesAndSendScreenShot();
       void updateAllGeometries();
       void newGeometryValue(bool forceAllObjectsToUpdate);
       void sendGeometryFeedbackToState(int x, int y, const std::string& selName);
+      void frameFinished();
+      void lockMutex();
+      void unblockExecution();
+      void runDelayedGC();
 
       //---------------- Input ---------------------------------------------------------------------
       void viewBarButtonClicked();
@@ -108,7 +127,6 @@ namespace SCIRun {
       void setPolygonOffset(int value);
       void setTextOffset(int value);
       void setAutoRotateSpeed(double speed);
-      void setAutoRotateOnDrag(bool value);
       void autoRotateRight();
       void autoRotateLeft();
       void autoRotateUp();
@@ -116,7 +134,6 @@ namespace SCIRun {
       void pullCameraRotation();
       void pullCameraLookAt();
       void pullCameraDistance();
-
 
       //---------------- Widgets -------------------------------------------------------------------
       void updateMeshComponentSelection(const QString& moduleId, const QString& component, bool selected);
@@ -165,7 +182,6 @@ namespace SCIRun {
       void toggleLight3(bool value);
       void setLight3Azimuth(int value);
       void setLight3Inclination(int value);
-      void updateLightDirection(int light);
       void lightingChecked(bool value);
 
       //---------------- Material Settings ---------------------------------------------------------
@@ -232,16 +248,20 @@ namespace SCIRun {
       void addConfigurationDock();
       QColor checkColorSetting(std::string& rgb, QColor defaultColor);
       void pullCameraState();
+      void pushCameraDistance();
+      void pushCameraLookAt();
+      void pushCameraRotation();
       void pushCameraState();
 
       //---------------- Widgets -------------------------------------------------------------------
       void selectObject(const int x, const int y);
-      std::string restoreObjColor();
+      void restoreObjColor();
+      void backupColorValues(Graphics::Datatypes::WidgetHandle widget);
 
       //---------------- Clipping Planes -----------------------------------------------------------
       void updatClippingPlaneDisplay();
       void buildGeomClippingPlanes();
-      void buildGeometryClippingPlane(int index, glm::vec4 plane, const Core::Geometry::BBox& bbox);
+      void buildGeometryClippingPlane(int index, const glm::vec4& plane, const Core::Geometry::BBox& bbox);
 
       //---------------- Scale Bar -----------------------------------------------------------------
       void updateScaleBarLength();
@@ -251,10 +271,10 @@ namespace SCIRun {
       void toggleLightOnOff(int index, bool value);
 
       //---------------- Materials -----------------------------------------------------------------
-      void setMaterialFactor(int factor, double value);
+      void setMaterialFactor(Render::MatFactor factor, double value);
 
       //---------------- Fog -----------------------------------------------------------------------
-      void setFog(int factor, double value);
+      void setFog(Render::FogFactor factor, double value);
       void setFogColor(const glm::vec4 &color);
 
       //---------------- Misc. ---------------------------------------------------------------------
@@ -279,18 +299,21 @@ namespace SCIRun {
 
 
       GLWidget*                             mGLWidget                     {nullptr};  ///< GL widget containing context.
-      std::weak_ptr<Render::SRInterface>    mSpire                        {};         ///< Instance of Spire.
+      Render::RendererWeakPtr               mSpire                        {};         ///< Instance of Spire.
       QToolBar*                             mToolBar                      {nullptr};  ///< Tool bar.
       QToolBar*                             mViewBar                      {nullptr};  ///< Tool bar for view options.
       QComboBox*                            mDownViewBox                  {nullptr};  ///< Combo box for Down axis options.
       QComboBox*                            mUpVectorBox                  {nullptr};  ///< Combo box for Up Vector options.
       ViewSceneControlsDock*                mConfigurationDock            {nullptr};  ///< Dock holding configuration functions
+      SharedPointer<ScopedWidgetColorChanger> widgetColorChanger_         {};
 
       bool                                  shown_                        {false};
+      bool                                  delayGC                       {false};
+      bool                                  delayedGCRequested            {false};
       bool                                  hideViewBar_                  {};
       bool                                  invertZoom_                   {};
       bool                                  shiftdown_                    {false};
-      bool                                  selected_                     {false};
+      Graphics::Datatypes::WidgetHandle     selectedWidget_;
       int                                   clippingPlaneIndex_           {0};
       float                                 clippingPlaneColors_[6][3]    {{0.7f, 0.2f, 0.1f}, {0.8f, 0.5f, 0.3f},
                                                                            {0.8f, 0.8f, 0.5f}, {0.4f, 0.7f, 0.3f},
@@ -317,9 +340,12 @@ namespace SCIRun {
       QPushButton*                                      autoViewButton_     {nullptr};
       QPushButton*                                      viewBarBtn_         {nullptr};
 
+      std::vector<ViewSceneDialog*>                     viewScenesToUpdate  {};
+
       friend class ViewSceneControlsDock;
 
       std::unique_ptr<Core::GeometryIDGenerator> gid_;
+      std::string                                       name_               {""};
     };
 
   } // namespace Gui

@@ -1,12 +1,10 @@
-
 #
 #  For more information, please see: http://software.sci.utah.edu
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -27,20 +25,33 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
+
 SET(Interface_Modules_Python_FORMS
   PythonObjectForwarder.ui
   InterfaceWithPython.ui
+  ModuleStateModifierTester.ui
+  LoopStart.ui
+  #LoopIncrement.ui
+  LoopEnd.ui
 )
 
 SET(Interface_Modules_Python_HEADERS
   PythonObjectForwarderDialog.h
   InterfaceWithPythonDialog.h
+  ModuleStateModifierTesterDialog.h
+  LoopStartDialog.h
+  #LoopIncrementDialog.h
+  LoopEndDialog.h
   share.h
 )
 
 SET(Interface_Modules_Python_SOURCES
   PythonObjectForwarderDialog.cc
   InterfaceWithPythonDialog.cc
+  ModuleStateModifierTesterDialog.cc
+  LoopStartDialog.cc
+  #LoopIncrementDialog.cc
+  LoopEndDialog.cc
 )
 
 QT_WRAP_UI(Interface_Modules_Python_FORMS_HEADERS "${Interface_Modules_Python_FORMS}")

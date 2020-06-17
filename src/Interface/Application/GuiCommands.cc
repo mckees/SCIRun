@@ -1,30 +1,30 @@
 /*
-For more information, please see: http://software.sci.utah.edu
+   For more information, please see: http://software.sci.utah.edu
 
-The MIT License
+   The MIT License
 
-Copyright (c) 2015 Scientific Computing and Imaging Institute,
-University of Utah.
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
+   University of Utah.
 
-License for the specific language governing rights and limitations under
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the "Software"),
-to deal in the Software without restriction, including without limitation
-the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <Interface/qt_include.h>
 #include <numeric>
@@ -241,15 +241,21 @@ bool NetworkFileProcessCommand::execute()
   {
     std::string message(e.what());
     GuiLogger::logErrorStd("File load failed (" + filename + "): SCIRun exception in load_xml, " + message);
-    if (message.find("InterfaceWithTetGen") != std::string::npos)
+
+    auto quiet = get(Core::Algorithms::AlgorithmParameterName("QuietMode")).toBool();
+
+    if (!quiet)
     {
-      QMessageBox::warning(SCIRunMainWindow::Instance(), "TetGen module not found",
-        "TetGen module not found, please rebuild with TetGen enabled or find a TetGen-enabled build.");
-    }
-    else if (message.find("Undefined module") != std::string::npos)
-    {
-      QMessageBox::warning(SCIRunMainWindow::Instance(), "Legacy module not found",
-        QString("If you just ran the network converter command, the error is: ") + e.what());
+      if (message.find("InterfaceWithTetGen") != std::string::npos)
+      {
+        QMessageBox::warning(SCIRunMainWindow::Instance(), "TetGen module not found",
+          "TetGen module not found, please rebuild with TetGen enabled or find a TetGen-enabled build.");
+      }
+      else if (message.find("Undefined module") != std::string::npos)
+      {
+        QMessageBox::warning(SCIRunMainWindow::Instance(), "Legacy module not found",
+          QString("If you just ran the network converter command, the error is: ") + e.what());
+      }
     }
   }
   catch (std::exception& ex)
@@ -295,7 +301,15 @@ NetworkFileHandle FileImportCommand::processXmlFile(const std::string& filename)
 
 bool RunPythonScriptCommandGui::execute()
 {
-  auto script = Application::Instance().parameters()->pythonScriptFile().get();
+  auto& app = Application::Instance();
+  if (app.parameters()->quitAfterOneScriptedExecution())
+  {
+    SCIRunMainWindow::Instance()->skipSaveCheck();
+    SCIRunMainWindow::Instance()->setupQuitAfterExecute();
+    app.controller()->stopExecutionContextLoopWhenExecutionFinishes();
+  }
+
+  auto script = app.parameters()->pythonScriptFile().get();
   SCIRunMainWindow::Instance()->runPythonScript(QString::fromStdString(script.string()));
   return true;
 }

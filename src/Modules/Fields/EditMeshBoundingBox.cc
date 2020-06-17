@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -26,13 +25,15 @@
    DEALINGS IN THE SOFTWARE.
 */
 
-#include <Modules/Fields/EditMeshBoundingBox.h>
-#include <Core/GeometryPrimitives/BBox.h>
+
+#include <Core/Datatypes/Color.h>
+#include <Core/Datatypes/DenseMatrix.h>
 #include <Core/Datatypes/Legacy/Field/Field.h>
 #include <Core/Datatypes/Legacy/Field/VMesh.h>
-#include <Core/Datatypes/DenseMatrix.h>
+#include <Core/GeometryPrimitives/BBox.h>
 #include <Graphics/Widgets/Widget.h>
-#include <Core/Datatypes/Color.h>
+#include <Graphics/Widgets/WidgetFactory.h>
+#include <Modules/Fields/EditMeshBoundingBox.h>
 #include <boost/format.hpp>
 
 using namespace SCIRun;
@@ -194,10 +195,10 @@ void EditMeshBoundingBox::update_input_attributes(FieldHandle f)
   state->setValue(InputSizeZ, convertForLabel(size.z()));
 }
 
-GeometryBaseHandle EditMeshBoundingBox::buildGeometryObject()
+GeometryHandle EditMeshBoundingBox::buildGeometryObject()
 {
-  return WidgetFactory::createBox(*this, get_state()->getValue(Scale).toDouble(),
-    impl_->position_, impl_->bbox_);
+  return WidgetFactory::createBox({*this, ""}, {{get_state()->getValue(Scale).toDouble(), "", impl_->position_.center_, impl_->bbox_, 0},
+                                  impl_->position_ });
 }
 
 void EditMeshBoundingBox::computeWidgetBox(const BBox& box) const

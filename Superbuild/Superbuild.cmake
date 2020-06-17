@@ -44,13 +44,6 @@ ENDIF()
 
 INCLUDE( ExternalProject )
 
-# Compute -G arg for configuring external projects with the same CMake generator:
-#if(CMAKE_EXTRA_GENERATOR)
-#  set(gen "${CMAKE_EXTRA_GENERATOR} - ${CMAKE_GENERATOR}")
-#else()
-#  set(gen "${CMAKE_GENERATOR}" )
-#endif()
-
 ###########################################
 # DETERMINE ARCHITECTURE
 # In order for the code to depend on the architecture settings
@@ -64,7 +57,11 @@ ENDIF()
 
 ###########################################
 # Configure test support
-OPTION(BUILD_TESTING "Build with tests." ON)
+OPTION(BUILD_TESTING "Build with tests." OFF)
+
+###########################################
+# Configure compilation database generation
+OPTION(GENERATE_COMPILATION_DATABASE "Generate Compilation Database." ON)
 
 ###########################################
 # Configure python
@@ -96,31 +93,17 @@ ENDIF()
 OPTION(BUILD_HEADLESS "Build SCIRun without GUI." OFF)
 
 ###########################################
-# Configure Qt version
-
-SET(QT5_BUILD_DEFAULT ON)
-IF(APPLE) # Until ViewScene works...
-  SET(QT5_BUILD_DEFAULT OFF)
-ENDIF()
-OPTION(QT5_BUILD "Qt 5 compatible build" ${QT5_BUILD_DEFAULT})
-MARK_AS_ADVANCED(QT5_BUILD)
-
-###########################################
 # Travis CI build needs to be as slim as possible
 OPTION(TRAVIS_BUILD "Slim build for Travis CI" OFF)
 MARK_AS_ADVANCED(TRAVIS_BUILD)
 
 IF(TRAVIS_BUILD)
+  SET(BUILD_TESTING OFF)
+  SET(DOWNLOAD_TOOLKITS OFF)
+  SET(BUILD_WITH_SCIRUN_DATA OFF)
   IF(APPLE)
-    SET(BUILD_TESTING OFF)
-    SET(DOWNLOAD_TOOLKITS OFF)
-    SET(BUILD_WITH_SCIRUN_DATA OFF)
+    # build everything; qt flag is in travis.yml
   ELSE()
-    SET(QT5_BUILD OFF) # need to check this one
-	  SET(BUILD_TESTING OFF)
-	  SET(DOWNLOAD_TOOLKITS OFF)
-	  SET(BUILD_WITH_SCIRUN_DATA OFF)
-
     IF(CMAKE_C_COMPILER_ID MATCHES "GNU")
       SET(BUILD_HEADLESS ON)
       SET(BUILD_WITH_PYTHON OFF)
@@ -128,48 +111,28 @@ IF(TRAVIS_BUILD)
       # try building everything with clang!
     ENDIF()
   ENDIF()
-
-  ADD_DEFINITIONS(-DTRAVIS_BUILD)
 ENDIF()
 
 ###########################################
 # Configure Qt
 IF(NOT BUILD_HEADLESS)
-  IF (NOT QT5_BUILD)
-    SET(QT_MIN_VERSION "4.8.1")
-    INCLUDE(FindQt4)
-    FIND_PACKAGE(Qt4 COMPONENTS QtMain QtCore QtGui QtNetwork REQUIRED)
-    SET(QT_USE_QTOPENGL TRUE)
-
-    IF(QT4_FOUND)
-      MESSAGE(STATUS "QTVERSION=${QTVERSION}")
-      MESSAGE(STATUS "Found use file: ${QT_USE_FILE}")
-      IF(APPLE AND ${QTVERSION} VERSION_EQUAL 4.8 AND ${QTVERSION} VERSION_LESS 4.8.5)
-        MESSAGE(WARNING "Qt 4.8 versions earlier than 4.8.3 contain a bug that disables menu items under some circumstances. Upgrade to a more recent version.")
-      ENDIF()
-    ELSE()
-      MESSAGE(FATAL_ERROR "QT ${QT_MIN_VERSION} or later is required for building the SCIRun GUI")
-    ENDIF()
+  IF(TRAVIS_BUILD OR UNIX)
+    SET(QT_MIN_VERSION "5.4")
   ELSE()
-    SET(QT_MIN_VERSION "5.12")
+    SET(QT_MIN_VERSION "5.13")
+  ENDIF()
 
-    SET(Qt5_PATH "" CACHE PATH "Path to directory where Qt 5 is installed. Directory should contain lib and bin subdirectories.")
+  SET(Qt5_PATH "" CACHE PATH "Path to directory where Qt 5 is installed. Directory should contain lib and bin subdirectories.")
 
-    IF(IS_DIRECTORY ${Qt5_PATH})
-      FIND_PACKAGE(Qt5Core ${QT_MIN_VERSION} REQUIRED HINTS ${Qt5_PATH})
-      FIND_PACKAGE(Qt5Gui ${QT_MIN_VERSION} REQUIRED HINTS ${Qt5_PATH})
-  	  FIND_PACKAGE(Qt5Widgets ${QT_MIN_VERSION} REQUIRED HINTS ${Qt5_PATH})
-  	  FIND_PACKAGE(Qt5Network ${QT_MIN_VERSION} REQUIRED HINTS ${Qt5_PATH})
-      FIND_PACKAGE(Qt5OpenGL ${QT_MIN_VERSION} REQUIRED HINTS ${Qt5_PATH})
-  	  FIND_PACKAGE(Qt5Concurrent ${QT_MIN_VERSION} REQUIRED HINTS ${Qt5_PATH})
-    ELSE()
-      MESSAGE(SEND_ERROR "Set Qt5_PATH to directory where Qt 5 is installed (containing lib and bin subdirectories) or set BUILD_HEADLESS to ON.")
-    ENDIF()
+  IF(IS_DIRECTORY ${Qt5_PATH})
+    FIND_PACKAGE(Qt5 ${QT_MIN_VERSION} COMPONENTS Core Gui Widgets Network OpenGL Concurrent REQUIRED HINTS ${Qt5_PATH})
+  ELSE()
+    MESSAGE(SEND_ERROR "Set Qt5_PATH to directory where Qt 5 is installed (containing lib and bin subdirectories) or set BUILD_HEADLESS to ON.")
+  ENDIF()
 
-    IF(APPLE)
-      SET(MACDEPLOYQT_OUTPUT_LEVEL 0 CACHE STRING "Set macdeployqt output level (0-3)")
-      MARK_AS_ADVANCED(MACDEPLOYQT_OUTPUT_LEVEL)
-    ENDIF()
+  IF(APPLE)
+    SET(MACDEPLOYQT_OUTPUT_LEVEL 0 CACHE STRING "Set macdeployqt output level (0-3)")
+    MARK_AS_ADVANCED(MACDEPLOYQT_OUTPUT_LEVEL)
   ENDIF()
 ELSE()
   ADD_DEFINITIONS(-DBUILD_HEADLESS)
@@ -242,9 +205,7 @@ IF(WITH_TETGEN)
 ENDIF()
 
 IF(WITH_OSPRAY)
-  ADD_EXTERNAL( ${SUPERBUILD_DIR}/TbbExternal.cmake Tbb_external )
-  ADD_EXTERNAL( ${SUPERBUILD_DIR}/EmbreeExternal.cmake Embree_external )
-  ADD_EXTERNAL( ${SUPERBUILD_DIR}/IspcExternal.cmake Ispc_external )
+  ADD_EXTERNAL( ${SUPERBUILD_DIR}/OsprayExternal.cmake Ospray_external )
 ENDIF()
 
 IF(NOT BUILD_HEADLESS)
@@ -273,12 +234,12 @@ SET(SCIRUN_CACHE_ARGS
     "-DBUILD_HEADLESS:BOOL=${BUILD_HEADLESS}"
     "-DSCIRUN_TEST_RESOURCE_DIR:PATH=${SCIRUN_TEST_RESOURCE_DIR}"
     "-DBUILD_WITH_PYTHON:BOOL=${BUILD_WITH_PYTHON}"
+    "-DTRAVIS_BUILD:BOOL=${TRAVIS_BUILD}"
     "-DUSER_PYTHON_VERSION:STRING=${USER_PYTHON_VERSION}"
     "-DUSER_PYTHON_VERSION_MAJOR:STRING=${USER_PYTHON_VERSION_MAJOR}"
     "-DUSER_PYTHON_VERSION_MINOR:STRING=${USER_PYTHON_VERSION_MINOR}"
     "-DWITH_TETGEN:BOOL=${WITH_TETGEN}"
     "-DWITH_OSPRAY:BOOL=${WITH_OSPRAY}"
-    "-DQT5_BUILD:BOOL=${QT5_BUILD}"
     "-DREGENERATE_MODULE_FACTORY_CODE:BOOL=${REGENERATE_MODULE_FACTORY_CODE}"
     "-DGENERATE_MODULE_FACTORY_CODE:BOOL=${GENERATE_MODULE_FACTORY_CODE}"
     "-DEigen_DIR:PATH=${Eigen_DIR}"
@@ -295,6 +256,7 @@ SET(SCIRUN_CACHE_ARGS
     "-DLODEPNG_DIR:PATH=${LODEPNG_DIR}"
     "-DCLEAVER2_DIR:PATH=${CLEAVER2_DIR}"
     "-DSCI_DATA_DIR:PATH=${SCI_DATA_DIR}"
+    "-DGENERATE_COMPILATION_DATABASE:BOOL=${GENERATE_COMPILATION_DATABASE}"
 )
 
 IF(BUILD_WITH_PYTHON)
@@ -312,9 +274,7 @@ ENDIF()
 
 IF(WITH_OSPRAY)
   LIST(APPEND SCIRUN_CACHE_ARGS
-    "-Dembree_DIR:PATH=${Embree_DIR}"
-    "-DTBB_ROOT:PATH=${Tbb_DIR}"
-    "-DIspc_DIR:PATH=${Ispc_DIR}"
+    "-DOspray_External_Dir:PATH=${OSPRAY_BUILD_DIR}"
   )
 ENDIF()
 
@@ -325,26 +285,17 @@ IF(WIN32)
 ENDIF()
 
 IF(NOT BUILD_HEADLESS)
-  IF(QT5_BUILD)
-    LIST(APPEND SCIRUN_CACHE_ARGS
-      "-DQt5_PATH:PATH=${Qt5_PATH}"
-      "-DQt5Core_DIR:PATH=${Qt5Core_DIR}"
-      "-DQt5Gui_DIR:PATH=${Qt5Gui_DIR}"
-      "-DQt5OpenGL_DIR:PATH=${Qt5OpenGL_DIR}"
-  	  "-DQt5Network_DIR:PATH=${Qt5Network_DIR}"
-   	  "-DQt5Widgets_DIR:PATH=${Qt5Widgets_DIR}"
-  	  "-DQt5Concurrent_DIR:PATH=${Qt5Concurrent_DIR}"
-      "-DMACDEPLOYQT_OUTPUT_LEVEL:STRING=${MACDEPLOYQT_OUTPUT_LEVEL}"
-      "-DQWT_DIR:PATH=${QWT_DIR}"
-    )
-  ELSE()
-    LIST(APPEND SCIRUN_CACHE_ARGS
-      "-DQT_QMAKE_EXECUTABLE:FILEPATH=${QT_QMAKE_EXECUTABLE}"
-      "-DQT_USE_QTOPENGL:BOOL=${QT_USE_QTOPENGL}"
-      "-DQT_MIN_VERSION:STRING=${QT_MIN_VERSION}"
-      "-DQWT_DIR:PATH=${QWT_DIR}"
-    )
-  ENDIF()
+  LIST(APPEND SCIRUN_CACHE_ARGS
+    "-DQt5_PATH:PATH=${Qt5_PATH}"
+    "-DQt5Core_DIR:PATH=${Qt5Core_DIR}"
+    "-DQt5Gui_DIR:PATH=${Qt5Gui_DIR}"
+    "-DQt5OpenGL_DIR:PATH=${Qt5OpenGL_DIR}"
+	  "-DQt5Network_DIR:PATH=${Qt5Network_DIR}"
+ 	  "-DQt5Widgets_DIR:PATH=${Qt5Widgets_DIR}"
+	  "-DQt5Concurrent_DIR:PATH=${Qt5Concurrent_DIR}"
+    "-DMACDEPLOYQT_OUTPUT_LEVEL:STRING=${MACDEPLOYQT_OUTPUT_LEVEL}"
+    "-DQWT_DIR:PATH=${QWT_DIR}"
+  )
 ENDIF()
 
 ExternalProject_Add( SCIRun_external

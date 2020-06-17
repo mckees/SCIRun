@@ -3,9 +3,8 @@
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -26,6 +25,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
+
 SET(Modules_Visualization_SRCS
   CreateStandardColorMap.cc
   ShowField.cc
@@ -36,6 +36,8 @@ SET(Modules_Visualization_SRCS
   RescaleColorMap.cc
   TextBuilder.cc
   ShowFieldWithOspray.cc
+  CreateTestingArrow.cc
+  ShowMeshBoundingBox.cc
 )
 
 SET(Modules_Visualization_HEADERS
@@ -48,6 +50,8 @@ SET(Modules_Visualization_HEADERS
   RescaleColorMap.h
   TextBuilder.h
   ShowFieldWithOspray.h
+  CreateTestingArrow.h
+  ShowMeshBoundingBox.h
   share.h
 )
 
@@ -64,6 +68,7 @@ TARGET_LINK_LIBRARIES(Modules_Visualization
   Core_Algorithms_Visualization
   Graphics_Glyphs
   Graphics_Datatypes
+  Graphics_Widgets
   ${SCI_FREETYPE_LIBRARY}
 )
 

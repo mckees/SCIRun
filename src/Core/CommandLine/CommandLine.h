@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #ifndef CORE_COMMANDLINE_COMMANDLINESPEC_H
 #define CORE_COMMANDLINE_COMMANDLINESPEC_H
@@ -50,6 +50,7 @@ namespace SCIRun {
         virtual const std::vector<std::string>& inputFiles() const = 0;
         virtual boost::optional<boost::filesystem::path> pythonScriptFile() const = 0;
         virtual boost::optional<boost::filesystem::path> dataDirectory() const = 0;
+        virtual boost::optional<std::string> importNetworkFile() const = 0;
         virtual bool help() const = 0;
         virtual bool version() const = 0;
         virtual bool executeNetwork() const = 0;
@@ -58,6 +59,7 @@ namespace SCIRun {
         virtual bool disableSplash() const = 0;
         virtual bool isRegressionMode() const = 0;
         virtual bool interactiveMode() const = 0;
+        virtual bool saveViewSceneScreenshotsOnQuit() const = 0;
         virtual bool quitAfterOneScriptedExecution() const = 0;
         virtual bool loadMostRecentFile() const = 0;
         virtual DeveloperParametersPtr developerParameters() const = 0;

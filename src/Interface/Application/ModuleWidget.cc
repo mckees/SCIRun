@@ -3,7 +3,7 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
    Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,15 +25,15 @@
    DEALINGS IN THE SOFTWARE.
 */
 
+
 #include <iostream>
 #include <Interface/qt_include.h>
-#ifdef QT5_BUILD
 #include <QtConcurrent>
-#endif
 #include "ui_Module.h"
 #include <boost/thread.hpp>
 #include <Core/Logging/Log.h>
 #include <Core/Application/Application.h>
+#include <Core/Algorithms/Base/AlgorithmVariableNames.h>
 #include <Dataflow/Engine/Controller/NetworkEditorController.h>
 #include <Dataflow/Network/Connection.h>
 
@@ -50,11 +50,16 @@
 #include <Core/Application/Preferences/Preferences.h>
 #include <Interface/Application/MainWindowCollaborators.h>
 
+//TODO
+#include <Interface/Modules/Render/ViewScene.h>
+
 using namespace SCIRun;
 using namespace Core;
 using namespace Gui;
 using namespace Dataflow::Networks;
 using namespace Logging;
+
+//#define MODULE_POSITION_LOGGING
 
 namespace SCIRun {
 namespace Gui {
@@ -70,12 +75,14 @@ namespace Gui {
         << disabled(new QAction("ID: " + QString::fromStdString(moduleId), parent))
         << separatorAction(parent)
         << new QAction("Execute", parent)
+        << new QAction("... Downstream Only", parent)
         << new QAction("Help", parent)
         << new QAction("Edit Notes...", parent)
         << new QAction("Duplicate", parent)
         << new QAction("Replace With...", parent)
         //<< disabled(new QAction("Ignore*", parent))
         << new QAction("Show Log", parent)
+        << new QAction("Toggle Programmable Input Port", parent)
         //<< disabled(new QAction("Make Sub-Network", parent))  // Issue #287
         << separatorAction(parent)
         << new QAction("Destroy", parent));
@@ -206,7 +213,8 @@ void ModuleWidgetDisplay::setupButtons(bool hasUI, QObject*)
 
 void ModuleWidgetDisplay::setupIcons()
 {
-  getExecuteButton()->setIcon(QPixmap(":/general/Resources/new/modules/run_all.png"));
+  auto currentExecuteIcon = Preferences::Instance().moduleExecuteDownstreamOnly ? ModuleWidget::downstreamOnlyIcon : ModuleWidget::allIcon;
+  getExecuteButton()->setIcon(QPixmap(currentExecuteIcon));
   getOptionsButton()->setText("");
   getOptionsButton()->setIcon(QPixmap(":/general/Resources/new/modules/options.png"));
   getHelpButton()->setText("");
@@ -225,14 +233,8 @@ void ModuleWidgetDisplay::setupIcons()
 
 void ModuleWidget::adjustExecuteButtonToDownstream(bool downOnly)
 {
-  if (downOnly)
-  {
-    fullWidgetDisplay_->getExecuteButton()->setIcon(QPixmap(":/general/Resources/new/modules/run_down.png"));
-  }
-  else
-  {
-    fullWidgetDisplay_->getExecuteButton()->setIcon(QPixmap(":/general/Resources/new/modules/run_all.png"));
-  }
+  currentExecuteIcon_ = downOnly ? &downstreamOnlyIcon : &allIcon;
+  fullWidgetDisplay_->getExecuteButton()->setIcon(QPixmap(*currentExecuteIcon_));
 }
 
 void ModuleWidgetDisplay::startExecuteMovie()
@@ -323,16 +325,19 @@ QGroupBox* ModuleWidgetDisplay::getButtonGroup() const
 static const int UNSET = -1;
 static const int SELECTED = -50;
 
-typedef boost::bimap<QString, int> ColorStateLookup;
-typedef ColorStateLookup::value_type ColorStatePair;
-static ColorStateLookup colorStateLookup;
-void fillColorStateLookup(const QString& background);
-
 namespace
 {
   ModuleId id(ModuleHandle mod)
   {
     return mod ? mod->id() : ModuleId();
+  }
+
+  QString backgroundColorByName(const QString& name)
+  {
+    if (name.contains("Loop"))
+      return moduleRGBA(13, 152, 186);
+
+    return moduleRGBA(99,99,104);
   }
 }
 
@@ -357,7 +362,7 @@ ModuleWidget::ModuleWidget(NetworkEditor* ed, const QString& name, ModuleHandle 
   inputPortLayout_(nullptr),
   outputPortLayout_(nullptr),
   deleting_(false),
-  defaultBackgroundColor_(moduleRGBA(99,99,104)),
+  defaultBackgroundColor_(backgroundColorByName(name)),
   isViewScene_(name == "ViewScene" || name == "OsprayViewer") //TODO
 {
   fillColorStateLookup(defaultBackgroundColor_);
@@ -370,6 +375,7 @@ ModuleWidget::ModuleWidget(NetworkEditor* ed, const QString& name, ModuleHandle 
   makeOptionsDialog();
   createPorts(*theModule_);
   addPorts(currentIndex());
+  updateProgrammablePorts();
 
   connect(this, SIGNAL(backgroundColorUpdated(const QString&)), this, SLOT(updateBackgroundColor(const QString&)));
   theModule_->executionState().connectExecutionStateChanged([this](int state) { QtConcurrent::run(boost::bind(&ModuleWidget::updateBackgroundColorForModuleState, this, state)); });
@@ -397,7 +403,12 @@ ModuleWidget::ModuleWidget(NetworkEditor* ed, const QString& name, ModuleHandle 
         .arg(QString::fromStdString(theModule->name()))
         .arg(QString::fromStdString(theModule->replacementModuleName())));
   }
+
+  currentExecuteIcon_ = Preferences::Instance().moduleExecuteDownstreamOnly ? &downstreamOnlyIcon : &allIcon;
 }
+
+QString ModuleWidget::downstreamOnlyIcon(":/general/Resources/new/modules/run_down.png");
+QString ModuleWidget::allIcon(":/general/Resources/new/modules/run_all.png");
 
 int ModuleWidget::buildDisplay(ModuleWidgetDisplayBase* display, const QString& name)
 {
@@ -519,7 +530,7 @@ void ModuleWidget::setLogButtonColor(const QColor& color)
   if (color == Qt::red)
   {
     errored_ = true;
-    updateBackgroundColor(colorStateLookup.right.at(static_cast<int>(ModuleExecutionState::Errored)));
+    updateBackgroundColor(colorStateLookup_.right.at(static_cast<int>(ModuleExecutionState::Errored)));
   }
   fullWidgetDisplay_->setStatusColor(moduleRGBA(color.red(), color.green(), color.blue()));
 }
@@ -542,11 +553,14 @@ void ModuleWidget::setupModuleActions()
 {
   actionsMenu_.reset(new ModuleActionsMenu(this, moduleId_));
   addWidgetToExecutionDisableList(actionsMenu_->getAction("Execute"));
+  addWidgetToExecutionDisableList(actionsMenu_->getAction("... Downstream Only"));
 
   connect(actionsMenu_->getAction("Execute"), SIGNAL(triggered()), this, SLOT(executeButtonPushed()));
+  connect(actionsMenu_->getAction("... Downstream Only"), SIGNAL(triggered()), this, SLOT(executeTriggeredViaStateChange()));
   connect(this, SIGNAL(updateProgressBarSignal(double)), this, SLOT(updateProgressBar(double)));
   connect(actionsMenu_->getAction("Help"), SIGNAL(triggered()), this, SLOT(launchDocumentation()));
   connect(actionsMenu_->getAction("Duplicate"), SIGNAL(triggered()), this, SLOT(duplicate()));
+  connect(actionsMenu_->getAction("Toggle Programmable Input Port"), &QAction::triggered, this, &ModuleWidget::toggleProgrammableInputPort);
   if (isViewScene_
     || theModule_->hasDynamicPorts()  //TODO: buggy combination, will disable for now. Fix is #1035
     || theModule_->id().name_ == "Subnet")
@@ -732,6 +746,26 @@ void ModuleWidget::createOutputPorts(const ModuleInfoProvider& moduleInfoProvide
 {
   PortBuilder builder;
   builder.buildOutputs(this, moduleInfoProvider);
+}
+
+void ModuleWidget::updateProgrammablePorts()
+{
+  #if 0 //later maybe?
+  auto state = theModule_->get_state();
+  auto hasKey = state->containsKey(Core::Algorithms::Variables::ProgrammableInputPortEnabled);
+  qDebug() << moduleId_.c_str() << "port state: hasKey " << hasKey;
+  if (hasKey)
+    qDebug() << "\tvalue: " << state->getValue(Core::Algorithms::Variables::ProgrammableInputPortEnabled).toBool();
+
+  if (hasKey && state->getValue(Core::Algorithms::Variables::ProgrammableInputPortEnabled).toBool())
+  {
+    // do nothing, port is on by default
+  }
+  else
+  {
+    qDebug() << "\t\t" << "NEED TO TURN OFF PROG INPUT";
+  }
+  #endif
 }
 
 void ModuleWidget::hookUpGeneralPortSignals(PortWidget* port) const
@@ -1007,6 +1041,7 @@ ModuleWidget::~ModuleWidget()
     removeWidgetFromExecutionDisableList(fullWidgetDisplay_->getExecuteButton());
   }
   removeWidgetFromExecutionDisableList(actionsMenu_->getAction("Execute"));
+  removeWidgetFromExecutionDisableList(actionsMenu_->getAction("... Downstream Only"));
   if (dialog_)
     removeWidgetFromExecutionDisableList(dialog_->getExecuteAction());
 
@@ -1038,6 +1073,10 @@ ModuleWidget::~ModuleWidget()
 
     Q_EMIT removeModule(ModuleId(moduleId_));
   }
+#ifdef MODULE_POSITION_LOGGING
+  logCritical("Q_EMIT display Changed {},{}", LOG_FUNC, __LINE__);
+#endif
+
   Q_EMIT displayChanged();
 }
 
@@ -1081,16 +1120,13 @@ boost::signals2::connection ModuleWidget::connectErrorListener(const ErrorSignal
   return theModule_->connectErrorListener(subscriber);
 }
 
-void fillColorStateLookup(const QString& background)
+void ModuleWidget::fillColorStateLookup(const QString& background)
 {
-  if (colorStateLookup.empty())
-  {
-    colorStateLookup.insert(ColorStatePair(moduleRGBA(205,190,112), static_cast<int>(ModuleExecutionState::Waiting)));
-    colorStateLookup.insert(ColorStatePair(moduleRGBA(170, 204, 170), static_cast<int>(ModuleExecutionState::Executing)));
-    colorStateLookup.insert(ColorStatePair(background, static_cast<int>(ModuleExecutionState::Completed)));
-    colorStateLookup.insert(ColorStatePair(moduleRGBA(164, 211, 238), SELECTED));
-    colorStateLookup.insert(ColorStatePair(moduleRGBA(176, 23, 31), static_cast<int>(ModuleExecutionState::Errored)));
-  }
+  colorStateLookup_.insert(ColorStatePair(moduleRGBA(205,190,112), static_cast<int>(ModuleExecutionState::Waiting)));
+  colorStateLookup_.insert(ColorStatePair(moduleRGBA(170, 204, 170), static_cast<int>(ModuleExecutionState::Executing)));
+  colorStateLookup_.insert(ColorStatePair(background, static_cast<int>(ModuleExecutionState::Completed)));
+  colorStateLookup_.insert(ColorStatePair(moduleRGBA(164, 211, 238), SELECTED));
+  colorStateLookup_.insert(ColorStatePair(moduleRGBA(176, 23, 31), static_cast<int>(ModuleExecutionState::Errored)));
 }
 
 //primitive state machine--updateBackgroundColor slot needs the thread-safe state machine too
@@ -1100,12 +1136,12 @@ void ModuleWidget::updateBackgroundColorForModuleState(int moduleState)
   {
   case static_cast<int>(ModuleExecutionState::Waiting):
   {
-    Q_EMIT backgroundColorUpdated(colorStateLookup.right.at(static_cast<int>(ModuleExecutionState::Waiting)));
+    Q_EMIT backgroundColorUpdated(colorStateLookup_.right.at(static_cast<int>(ModuleExecutionState::Waiting)));
   }
   break;
   case static_cast<int>(ModuleExecutionState::Executing):
   {
-    Q_EMIT backgroundColorUpdated(colorStateLookup.right.at(static_cast<int>(ModuleExecutionState::Executing)));
+    Q_EMIT backgroundColorUpdated(colorStateLookup_.right.at(static_cast<int>(ModuleExecutionState::Executing)));
   }
   break;
   case static_cast<int>(ModuleExecutionState::Completed):
@@ -1124,7 +1160,7 @@ void ModuleWidget::updateBackgroundColor(const QString& color)
 
     if (errored_)
     {
-      colorToUse = colorStateLookup.right.at(static_cast<int>(ModuleExecutionState::Errored));
+      colorToUse = colorStateLookup_.right.at(static_cast<int>(ModuleExecutionState::Errored));
     }
 
     static const QString rounded("color: white; border-radius: 7px;");
@@ -1133,13 +1169,13 @@ void ModuleWidget::updateBackgroundColor(const QString& color)
     fullWidgetDisplay_->getTitle()->setStyleSheet(style);
     fullWidgetDisplay_->getButtonGroup()->setStyleSheet(style);
 
-    previousModuleState_ = colorStateLookup.left.at(colorToUse);
+    previousModuleState_ = colorStateLookup_.left.at(colorToUse);
   }
 }
 
 void ModuleWidget::setColorSelected()
 {
-  Q_EMIT backgroundColorUpdated(colorStateLookup.right.at(SELECTED));
+  Q_EMIT backgroundColorUpdated(colorStateLookup_.right.at(SELECTED));
   Q_EMIT moduleSelected(true);
 }
 
@@ -1270,7 +1306,7 @@ void ModuleWidget::toggleOptionsDialog()
         {
           auto maxX = *std::max_element(positions_.begin(), positions_.end(), [](const QPoint& p1, const QPoint& p2) { return p1.x() < p2.x(); });
           auto maxY = *std::max_element(positions_.begin(), positions_.end(), [](const QPoint& p1, const QPoint& p2) { return p1.y() < p2.y(); });
-          static const QRect rec = QApplication::desktop()->screenGeometry();
+          static const auto rec = QGuiApplication::screens()[0]->size();
           dockable_->move((maxX.x() + 30) % rec.width(), (maxY.y() + 30) % rec.height());
         }
         positions_.append(dockable_->pos());
@@ -1379,7 +1415,25 @@ void ModuleWidget::pinUI()
 void ModuleWidget::hideUI()
 {
   if (dockable_)
+  {
     dockable_->hide();
+  }
+}
+
+void ModuleWidget::seeThroughUI()
+{
+  if (dockable_)
+  {
+    dockable_->setWindowOpacity(0.6);
+  }
+}
+
+void ModuleWidget::normalOpacityUI()
+{
+  if (dockable_)
+  {
+    dockable_->setWindowOpacity(1);
+  }
 }
 
 void ModuleWidget::showUI()
@@ -1402,7 +1456,7 @@ void ModuleWidget::collapsePinnedDialog()
 
 void ModuleWidget::executeButtonPushed()
 {
-  auto skipUpstream = QApplication::keyboardModifiers() == Qt::ShiftModifier;
+  auto skipUpstream = currentExecuteIcon_ == &downstreamOnlyIcon;
   Q_EMIT executedManually(theModule_, !skipUpstream);
   changeExecuteButtonToStop();
 }
@@ -1432,7 +1486,7 @@ void ModuleWidget::changeExecuteButtonToStop()
 
 void ModuleWidget::changeExecuteButtonToPlay()
 {
-  fullWidgetDisplay_->getExecuteButton()->setIcon(QPixmap(":/general/Resources/new/modules/run_all.png"));
+  fullWidgetDisplay_->getExecuteButton()->setIcon(QPixmap(*currentExecuteIcon_));
   disconnect(fullWidgetDisplay_->getExecuteButton(), SIGNAL(clicked()), this, SLOT(stopButtonPushed()));
   connect(fullWidgetDisplay_->getExecuteButton(), SIGNAL(clicked()), this, SLOT(executeButtonPushed()));
   movePortWidgets(currentIndex(), TITLE_PAGE);
@@ -1450,6 +1504,11 @@ void ModuleWidget::movePortWidgets(int oldIndex, int newIndex)
   removeOutputPortsFromWidget(oldIndex);
   addInputPortsToWidget(newIndex);
   addOutputPortsToWidget(newIndex);
+
+  #ifdef MODULE_POSITION_LOGGING
+    logCritical("Q_EMIT display Changed {},{}", LOG_FUNC, __LINE__);
+  #endif
+
   Q_EMIT displayChanged();
 }
 
@@ -1457,7 +1516,7 @@ void ModuleWidget::handleDialogFatalError(const QString& message)
 {
   skipExecuteDueToFatalError_ = true;
   qDebug() << "Dialog error: " << message;
-  updateBackgroundColor(colorStateLookup.right.at(static_cast<int>(ModuleExecutionState::Errored)));
+  updateBackgroundColor(colorStateLookup_.right.at(static_cast<int>(ModuleExecutionState::Errored)));
   colorLocked_ = true;
   setStartupNote("MODULE FATAL ERROR, DO NOT USE THIS INSTANCE. \nClick \"Refresh\" button to replace module for proper execution.");
 
@@ -1477,6 +1536,11 @@ void ModuleWidget::highlightPorts()
 {
   ports_->setHighlightPorts(true);
   setPortSpacing(true);
+
+  #ifdef MODULE_POSITION_LOGGING
+    logCritical("Q_EMIT display Changed {},{}", LOG_FUNC, __LINE__);
+  #endif
+
   Q_EMIT displayChanged();
 }
 
@@ -1520,6 +1584,11 @@ void ModuleWidget::unhighlightPorts()
 {
   ports_->setHighlightPorts(false);
   setPortSpacing(false);
+
+  #ifdef MODULE_POSITION_LOGGING
+    logCritical("Q_EMIT display Changed {},{}", LOG_FUNC, __LINE__);
+  #endif
+
   Q_EMIT displayChanged();
 }
 
@@ -1579,11 +1648,25 @@ void ModuleWidget::incomingConnectionStateChanged(bool disabled, int index)
   }
 }
 
+void ModuleWidget::saveImagesFromViewScene()
+{
+  if (isViewScene_)
+  {
+    qobject_cast<ViewSceneDialog*>(dialog_)->autoSaveScreenshot();
+  }
+}
+
 void ModuleWidget::setupPortSceneCollaborator(QGraphicsProxyWidget* proxy)
 {
   connectionFactory_ = boost::make_shared<ConnectionFactory>(proxy);
   closestPortFinder_ = boost::make_shared<ClosestPortFinder>(proxy);
   ports().setSceneFunc([proxy]() { return proxy->scene(); });
+}
+
+void ModuleWidget::toggleProgrammableInputPort()
+{
+  programmablePortEnabled_ = !programmablePortEnabled_;
+  theModule_->setProgrammableInputPortEnabled(programmablePortEnabled_);
 }
 
 void SubnetWidget::postLoadAction()

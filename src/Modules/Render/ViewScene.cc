@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -26,13 +25,15 @@
    DEALINGS IN THE SOFTWARE.
 */
 
-#include <es-log/trace-log.h>
-#include <Modules/Render/ViewScene.h>
-#include <Core/Datatypes/Geometry.h>
-#include <Core/Logging/Log.h>
+
 #include <Core/Datatypes/Color.h>
 #include <Core/Datatypes/DenseMatrix.h>
+#include <Core/Datatypes/Geometry.h>
+#include <Core/GeometryPrimitives/Point.h>
+#include <Core/Logging/Log.h>
+#include <Modules/Render/ViewScene.h>
 #include <boost/thread.hpp>
+#include <es-log/trace-log.h>
 
 // Needed to fix conflict between define in X11 header
 // and eigen enum member.
@@ -44,6 +45,7 @@ using namespace SCIRun::Modules::Render;
 using namespace SCIRun::Core::Algorithms;
 using namespace Render;
 using namespace SCIRun::Core::Datatypes;
+using namespace SCIRun::Core::Geometry;
 using namespace SCIRun::Dataflow::Networks;
 using namespace SCIRun::Core::Thread;
 using namespace SCIRun::Core::Logging;
@@ -53,18 +55,25 @@ MODULE_INFO_DEF(ViewScene, Render, SCIRun)
 Mutex ViewScene::mutex_("ViewScene");
 
 ALGORITHM_PARAMETER_DEF(Render, GeomData);
+ALGORITHM_PARAMETER_DEF(Render, VSMutex);
 ALGORITHM_PARAMETER_DEF(Render, GeometryFeedbackInfo);
 ALGORITHM_PARAMETER_DEF(Render, ScreenshotData);
 ALGORITHM_PARAMETER_DEF(Render, MeshComponentSelection);
 ALGORITHM_PARAMETER_DEF(Render, ShowFieldStates);
 
-ViewScene::ViewScene() : ModuleWithAsyncDynamicPorts(staticInfo_, true), asyncUpdates_(0)
+ViewScene::ViewScene() : ModuleWithAsyncDynamicPorts(staticInfo_, true)
 {
   RENDERER_LOG_FUNCTION_SCOPE;
   INITIALIZE_PORT(GeneralGeom);
   INITIALIZE_PORT(ScreenshotDataRed);
   INITIALIZE_PORT(ScreenshotDataGreen);
   INITIALIZE_PORT(ScreenshotDataBlue);
+
+  get_state()->setTransientValue(Parameters::VSMutex, &screenShotMutex_, true);
+}
+
+ViewScene::~ViewScene()
+{
 }
 
 void ViewScene::setStateDefaults()
@@ -118,8 +127,9 @@ void ViewScene::setStateDefaults()
   state->setValue(Light3Inclination, 90);
   state->setValue(ShowViewer, false);
   state->setValue(CameraDistance, 3.0);
-  state->setValue(CameraLookAt, makeAnonymousVariableList(0.0, 0.0, 0.0));
-  state->setValue(CameraRotation, makeAnonymousVariableList(1.0, 0.0, 0.0, 0.0));
+  state->setValue(CameraDistanceMinimum, 1e-10);
+  state->setValue(CameraLookAt, Point(0.0, 0.0, 0.0).get_string());
+  state->setValue(CameraRotation, std::string("Quaternion(1.0,0.0,0.0,0.0)"));
 
   get_state()->connectSpecificStateChanged(Parameters::GeometryFeedbackInfo, [this]() { processViewSceneObjectFeedback(); });
   get_state()->connectSpecificStateChanged(Parameters::MeshComponentSelection, [this]() { processMeshComponentSelection(); });
@@ -182,12 +192,12 @@ void ViewScene::updateTransientList()
 
 void ViewScene::asyncExecute(const PortId& pid, DatatypeHandle data)
 {
-  if (!data)
-    return;
+  if (!data) return;
   //lock for state modification
   {
     LOG_DEBUG("ViewScene::asyncExecute {} before locking", id().id_);
     Guard lock(mutex_.get());
+
     get_state()->setTransientValue(Parameters::ScreenshotData, boost::any(), false);
 
     LOG_DEBUG("ViewScene::asyncExecute {} after locking", id().id_);
@@ -212,9 +222,6 @@ void ViewScene::asyncExecute(const PortId& pid, DatatypeHandle data)
     activeGeoms_[pid] = geom;
     updateTransientList();
   }
-
-  fireTransientStateChangeSignalForGeomData();
-  asyncUpdates_.fetch_add(1);
 }
 
 void ViewScene::syncMeshComponentFlags(const std::string& connectedModuleId, ModuleStateHandle state)
@@ -229,52 +236,23 @@ void ViewScene::syncMeshComponentFlags(const std::string& connectedModuleId, Mod
 
 void ViewScene::execute()
 {
-  // hack for headless viewscene. Right now, it hangs/crashes/who knows.
+  fireTransientStateChangeSignalForGeomData();
 #ifdef BUILD_HEADLESS
   sendOutput(ScreenshotDataRed, boost::make_shared<DenseMatrix>(0, 0));
   sendOutput(ScreenshotDataGreen, boost::make_shared<DenseMatrix>(0, 0));
   sendOutput(ScreenshotDataBlue, boost::make_shared<DenseMatrix>(0, 0));
 #else
-  if (needToExecute())
+  Guard lock(screenShotMutex_.get());
+  if (needToExecute() && inputPorts().size() >= 1) // only send screenshot if input is present
   {
-    const int maxAsyncWaitTries = 100; //TODO: make configurable for longer-running networks
-    auto asyncWaitTries = 0;
-    if (inputPorts().size() > 1) // only send screenshot if input is present
+    ModuleStateInterface::TransientValueOption screenshotDataOption;
+    screenshotDataOption = get_state()->getTransientValue(Parameters::ScreenshotData);
     {
-      while (asyncUpdates_ < inputPorts().size() - 1)
-      {
-        asyncWaitTries++;
-        if (asyncWaitTries == maxAsyncWaitTries)
-          return; // nothing coming down the ports
-        //wait until all asyncExecutes are done.
-      }
-
-      ModuleStateInterface::TransientValueOption screenshotDataOption;
-      auto state = get_state();
-      do
-      {
-        screenshotDataOption = state->getTransientValue(Parameters::ScreenshotData);
-        if (screenshotDataOption)
-        {
-          auto screenshotData = transient_value_cast<RGBMatrices>(screenshotDataOption);
-          if (screenshotData.red)
-          {
-            sendOutput(ScreenshotDataRed, screenshotData.red);
-          }
-          if (screenshotData.green)
-          {
-            sendOutput(ScreenshotDataGreen, screenshotData.green);
-          }
-          if (screenshotData.blue)
-          {
-            sendOutput(ScreenshotDataBlue, screenshotData.blue);
-          }
-        }
-      } while (!screenshotDataOption);
+      auto screenshotData = transient_value_cast<RGBMatrices>(screenshotDataOption);
+      if (screenshotData.red) sendOutput(ScreenshotDataRed, screenshotData.red);
+      if (screenshotData.green) sendOutput(ScreenshotDataGreen, screenshotData.green);
+      if (screenshotData.blue) sendOutput(ScreenshotDataBlue, screenshotData.blue);
     }
-    asyncUpdates_ = 0;
-
-    get_state()->setTransientValue(Parameters::ScreenshotData, boost::any(), false);
   }
 #endif
 }
@@ -351,5 +329,6 @@ const AlgorithmParameterName ViewScene::Light2Inclination("Light2Inclination");
 const AlgorithmParameterName ViewScene::Light3Inclination("Light3Inclination");
 const AlgorithmParameterName ViewScene::ShowViewer("ShowViewer");
 const AlgorithmParameterName ViewScene::CameraDistance("CameraDistance");
+const AlgorithmParameterName ViewScene::CameraDistanceMinimum("CameraDistanceMinimum");
 const AlgorithmParameterName ViewScene::CameraLookAt("CameraLookAt");
 const AlgorithmParameterName ViewScene::CameraRotation("CameraRotation");

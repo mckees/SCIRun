@@ -3,7 +3,7 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
    Permission is hereby granted, free of charge, to any person obtaining a
@@ -24,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #ifndef MOCK_MODULE_H
 #define MOCK_MODULE_H
@@ -95,6 +96,9 @@ namespace SCIRun {
           MOCK_CONST_METHOD0(executionDisabled, bool(void));
           MOCK_CONST_METHOD0(legacyPackageName, std::string());
           MOCK_CONST_METHOD0(legacyModuleName, std::string());
+          MOCK_CONST_METHOD0(isImplementationDisabled, bool());
+          MOCK_METHOD1(setProgrammableInputPortEnabled, void(bool));
+          MOCK_CONST_METHOD1(checkForVirtualConnection, bool(const ModuleInterface&));
         };
 
         typedef boost::shared_ptr<MockModule> MockModulePtr;

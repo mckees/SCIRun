@@ -1,12 +1,11 @@
-/*
+/*/*
    For more information, please see: http://software.sci.utah.edu
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -26,10 +25,11 @@
    DEALINGS IN THE SOFTWARE.
 */
 
-/// \author James Hughes
-/// \date   September 2012
-/// \brief  Not sure this file should go in Modules/Render. But it is an
-///         auxiliary file to the ViewScene render module.
+
+/// author James Hughes
+/// date   September 2012
+/// brief  Not sure this file should go in Modules/Render. But it is an
+///        auxiliary file to the ViewScene render module.
 
 #include <Interface/Modules/Render/GLWidget.h>
 #include <iostream>
@@ -38,6 +38,7 @@
 #include <QTimer>
 #include <QtDebug>
 #include <Core/Application/Application.h>
+#include <Interface/Modules/Render/ES/SRInterface.h>
 #include <ctime>
 
 namespace SCIRun {
@@ -47,34 +48,14 @@ const int RendererUpdateInMS = 1000 / 60;
 const double updateTime = RendererUpdateInMS / 1000.0;
 
 //------------------------------------------------------------------------------
-GLWidget::GLWidget(QtGLContext* context, QWidget* parent) :
-    QGLWidget(context, parent),
-    mContext(new GLContext(this))
+GLWidget::GLWidget(QWidget* parent) :
+    QOpenGLWidget(parent)
 {
-  /// \todo Implement this intelligently. This function is called everytime
-  ///       there is a new graphics context.
-  std::vector<std::string> shaderSearchDirs;
-
-  mContext->makeCurrent();
-
-  spire::glPlatformInit();
-
-  auto frameInitLimitFromCommandLine = Core::Application::Instance().parameters()->developerParameters()->frameInitLimit();
-  if (frameInitLimitFromCommandLine)
-  {
-    std::cout << "Renderer frame init limit changed to " << *frameInitLimitFromCommandLine << std::endl;
-  }
-  const int frameInitLimit = frameInitLimitFromCommandLine.get_value_or(100);
-
-  mGraphics.reset(new Render::SRInterface(mContext, frameInitLimit));
+  mGraphics.reset(new Render::SRInterface());
 
   mTimer = new QTimer(this);
   connect(mTimer, SIGNAL(timeout()), this, SLOT(updateRenderer()));
-  mTimer->start(RendererUpdateInMS);
-
-  // We must disable auto buffer swap on the 'paintEvent'.
-  setAutoBufferSwap(false);
-}
+  mTimer->start(RendererUpdateInMS);}
 
 //------------------------------------------------------------------------------
 GLWidget::~GLWidget()
@@ -86,21 +67,39 @@ GLWidget::~GLWidget()
   }
 }
 
+void GLWidget::setLockZoom(bool lock)     { mGraphics->setLockZoom(lock); }
+void GLWidget::setLockPanning(bool lock)  { mGraphics->setLockPanning(lock); }
+void GLWidget::setLockRotation(bool lock) { mGraphics->setLockRotation(lock); }
+
 //------------------------------------------------------------------------------
 void GLWidget::initializeGL()
 {
+	spire::glPlatformInit();
+}
+
+void GLWidget::paintGL()
+{
+  //set to 200ms to force promise fullfilment every frame if a good frame as been requested
+  double lUpdateTime = mFrameRequested ? 0.2 : updateTime;
+  mGraphics->doFrame(lUpdateTime);
+
+  if (mFrameRequested && !mGraphics->hasShaderPromise())
+  {
+    mFrameRequested = false;
+    finishedFrame();
+  }
 }
 
 //------------------------------------------------------------------------------
-SCIRun::Render::SRInterface::MouseButton GLWidget::getSpireButton(QMouseEvent* event)
+SCIRun::Render::MouseButton GLWidget::getSpireButton(QMouseEvent* event)
 {
-  auto btn = SCIRun::Render::SRInterface::MOUSE_NONE;
+  auto btn = SCIRun::Render::MouseButton::MOUSE_NONE;
   if (event->buttons() & Qt::LeftButton)
-    btn = Render::SRInterface::MOUSE_LEFT;
+    btn = Render::MouseButton::MOUSE_LEFT;
   else if (event->buttons() & Qt::RightButton)
-    btn = Render::SRInterface::MOUSE_RIGHT;
+    btn = Render::MouseButton::MOUSE_RIGHT;
   else if (event->buttons() & Qt::MidButton)
-    btn = Render::SRInterface::MOUSE_MIDDLE;
+    btn = Render::MouseButton::MOUSE_MIDDLE;
 
   return btn;
 }
@@ -108,55 +107,34 @@ SCIRun::Render::SRInterface::MouseButton GLWidget::getSpireButton(QMouseEvent* e
 //------------------------------------------------------------------------------
 void GLWidget::mouseMoveEvent(QMouseEvent* event)
 {
-  // Extract appropriate key.
-  auto btn = getSpireButton(event);
-  mGraphics->inputMouseMove(glm::ivec2(event->x(), event->y()), btn);
+  event->ignore();
+}
+
+void GLWidget::mouseReleaseEvent(QMouseEvent* event)
+{
   event->ignore();
 }
 
 //------------------------------------------------------------------------------
 void GLWidget::mousePressEvent(QMouseEvent* event)
 {
-  auto btn = getSpireButton(event);
-  mGraphics->inputMouseDown(glm::ivec2(event->x(), event->y()), btn);
-  event->ignore();
-}
-
-//------------------------------------------------------------------------------
-void GLWidget::mouseReleaseEvent(QMouseEvent* event)
-{
-  auto btn = getSpireButton(event);
-  mGraphics->inputMouseUp(glm::ivec2(event->x(), event->y()), btn);
+  makeCurrent();
   event->ignore();
 }
 
 //------------------------------------------------------------------------------
 void GLWidget::wheelEvent(QWheelEvent * event)
 {
-  mGraphics->inputMouseWheel(event->delta());
-  event->ignore();
-}
-
-//------------------------------------------------------------------------------
-void GLWidget::keyPressEvent(QKeyEvent* event)
-{
-  mGraphics->inputShiftKeyDown(event->key() == Qt::Key_Shift);
-  event->ignore();
-}
-
-//------------------------------------------------------------------------------
-void GLWidget::keyReleaseEvent(QKeyEvent* event)
-{
-  mGraphics->inputShiftKeyDown(false);
   event->ignore();
 }
 
 //------------------------------------------------------------------------------
 void GLWidget::resizeGL(int width, int height)
 {
+  makeCurrent();
   mGraphics->eventResize(static_cast<size_t>(width),
                          static_cast<size_t>(height));
-  updateRenderer();
+  //updateRenderer();
 }
 
 //------------------------------------------------------------------------------
@@ -166,37 +144,15 @@ void GLWidget::closeEvent(QCloseEvent *evt)
   {
     mGraphics.reset();
   }
-  QGLWidget::closeEvent(evt);
-}
-
-//------------------------------------------------------------------------------
-void GLWidget::makeCurrent()
-{
-  mContext->makeCurrent();
+  QOpenGLWidget::closeEvent(evt);
 }
 
 //------------------------------------------------------------------------------
 void GLWidget::updateRenderer()
 {
-  mCurrentTime += updateTime;
-
-#if 0
-#ifdef QT5_BUILD
-  //idea--needs QWindow wrapper
-  if (!isExposed())
-    return;
-#endif
-#endif
-
-  try
+  if(isValid())
   {
-    mGraphics->doFrame(mCurrentTime, updateTime);
-    mContext->swapBuffers();
-  }
-  catch (const SCIRun::Render::SRInterfaceFailure& e)
-  {
-    Q_EMIT fatalError(e.what());
-    mTimer->stop();
+    update();
   }
 }
 

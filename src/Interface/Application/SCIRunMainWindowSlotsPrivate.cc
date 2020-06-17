@@ -1,29 +1,30 @@
 /*
-  For more information, please see: http://software.sci.utah.edu
+   For more information, please see: http://software.sci.utah.edu
 
-  The MIT License
+   The MIT License
 
-  Copyright (c) 2015 Scientific Computing and Imaging Institute,
-  University of Utah.
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
+   University of Utah.
 
-  Permission is hereby granted, free of charge, to any person obtaining a
-  copy of this software and associated documentation files (the "Software"),
-  to deal in the Software without restriction, including without limitation
-  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-  and/or sell copies of the Software, and to permit persons to whom the
-  Software is furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation
+   the rights to use, copy, modify, merge, publish, distribute, sublicense,
+   and/or sell copies of the Software, and to permit persons to whom the
+   Software is furnished to do so, subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included
-  in all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included
+   in all copies or substantial portions of the Software.
 
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-  DEALINGS IN THE SOFTWARE.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <es-log/trace-log.h>
 #include <QtGui>
@@ -167,6 +168,8 @@ void SCIRunMainWindow::filterModuleNamesInTreeView(const QString& start)
     searchType = HideItemsNotMatchingString::SearchType::WILDCARDS;
   else if(filterActionGroup_->checkedAction()->text().contains("fuzzy search"))
     searchType = HideItemsNotMatchingString::SearchType::FUZZY_SEARCH;
+  else if(filterActionGroup_->checkedAction()->text().contains("Filter UI only"))
+    searchType = HideItemsNotMatchingString::SearchType::HIDE_NON_UI;
 
   HideItemsNotMatchingString func(searchType, start);
 
@@ -408,7 +411,7 @@ void SCIRunMainWindow::handleCheckedModuleEntry(QTreeWidgetItem* item, int colum
   {
     moduleSelectorTreeWidget_->setCurrentItem(item);
 
-    auto faves = item->textColor(0) == CLIPBOARD_COLOR ? getSavedSubnetworksMenu(moduleSelectorTreeWidget_) : getFavoriteMenu(moduleSelectorTreeWidget_);
+    auto faves = item->foreground(0) == CLIPBOARD_COLOR ? getSavedSubnetworksMenu(moduleSelectorTreeWidget_) : getFavoriteMenu(moduleSelectorTreeWidget_);
 
     if (item->checkState(0) == Qt::Checked)
     {
@@ -416,7 +419,7 @@ void SCIRunMainWindow::handleCheckedModuleEntry(QTreeWidgetItem* item, int colum
       {
         auto fave = addFavoriteItem(faves, item);
         faves->sortChildren(0, Qt::AscendingOrder);
-        if (item->textColor(0) != CLIPBOARD_COLOR)
+        if (item->foreground(0) != CLIPBOARD_COLOR)
           favoriteModuleNames_ << item->text(0);
         else
         {
@@ -426,7 +429,7 @@ void SCIRunMainWindow::handleCheckedModuleEntry(QTreeWidgetItem* item, int colum
     }
     else
     {
-      if (faves && item->textColor(0) != CLIPBOARD_COLOR)
+      if (faves && item->foreground(0) != CLIPBOARD_COLOR)
       {
         favoriteModuleNames_.removeAll(item->text(0));
         for (int i = 0; i < faves->childCount(); ++i)
@@ -509,7 +512,7 @@ void SCIRunMainWindow::reportIssue()
   if (QMessageBox::Ok == QMessageBox::information(this, "Report Issue",
     "Click OK to be taken to SCIRun's Github issue reporting page.\n\nFor bug reports, please follow the template.", QMessageBox::Ok|QMessageBox::Cancel))
   {
-    QDesktopServices::openUrl(QUrl("https://github.com/SCIInstitute/SCIRun/issues/new", QUrl::TolerantMode));
+    QDesktopServices::openUrl(QUrl("https://github.com/SCIInstitute/SCIRun/issues/new/choose", QUrl::TolerantMode));
   }
 }
 
@@ -549,7 +552,6 @@ void SCIRunMainWindow::highlightPortsChanged()
 void SCIRunMainWindow::resetWindowLayout()
 {
   configurationDockWidget_->hide();
-  devConsole_->hide();
   provenanceWindow_->hide();
   moduleSelectorDockWidget_->show();
   moduleSelectorDockWidget_->setFloating(false);
@@ -560,6 +562,14 @@ void SCIRunMainWindow::launchNewUserWizard()
 {
   NewUserWizard wiz(this);
   wiz.exec();
+}
+
+void SCIRunMainWindow::launchPythonWizard()
+{
+#ifdef BUILD_WITH_PYTHON
+  PythonWizard *wiz = new PythonWizard( [this](const  QString& code) {pythonConsole_->runWizardCommand(code); }, this);
+  wiz->show();
+#endif
 }
 
 void SCIRunMainWindow::adjustModuleDock(int state)
@@ -730,7 +740,7 @@ void SCIRunMainWindow::updateClipboardHistory(const QString& xml)
   clip->setText(0, "clipboard " + QDateTime::currentDateTime().toString("ddd MMMM d yyyy hh:mm:ss.zzz"));
   clip->setToolTip(0, "todo: xml translation");
   clip->setData(0, clipboardKey, xml);
-  clip->setTextColor(0, CLIPBOARD_COLOR);
+  clip->setForeground(0, CLIPBOARD_COLOR);
 
   const int clipMax = 5;
   if (clips->childCount() == clipMax)
@@ -892,18 +902,19 @@ void SCIRunMainWindow::openToolkitNetwork()
 
 void SCIRunMainWindow::launchNewInstance()
 {
-  #ifdef __APPLE__
-  //TODO: test with bundle/installer
+#ifdef __APPLE__
   auto appFilepath = Core::Application::Instance().executablePath();
-  qDebug() << Core::Application::Instance().applicationName().c_str();
-  qDebug() << appFilepath.string().c_str();
-  qDebug() << appFilepath.parent_path().parent_path().string().c_str();
-  auto command = "open -n " +
-    (appFilepath.parent_path().parent_path() / "SCIRun/SCIRun_test").string() + " &";
-  qDebug() << command.c_str();
-  system( command.c_str() );
 
-  #endif
+#ifdef BUILD_BUNDLE
+  auto execName = appFilepath / "SCIRun";
+#else
+  auto execName = appFilepath.parent_path().parent_path() / "SCIRun/SCIRun_test";
+#endif
+
+  auto command = "open -n " + execName.string() + " &";
+
+  system( command.c_str() );
+#endif
 }
 
 void SCIRunMainWindow::maxCoreValueChanged(int value)

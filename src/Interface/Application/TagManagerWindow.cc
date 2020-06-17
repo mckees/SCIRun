@@ -3,10 +3,9 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
 
-   License for the specific language governing rights and limitations under
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
    to deal in the Software without restriction, including without limitation
@@ -26,6 +25,7 @@
    DEALINGS IN THE SOFTWARE.
 */
 
+
 #include <Interface/qt_include.h>
 #include <Interface/Application/TagManagerWindow.h>
 #include <Interface/Application/NetworkEditor.h>
@@ -42,6 +42,7 @@ namespace
 
 TagManagerWindow::TagManagerWindow(QWidget* parent /* = 0 */) : QDockWidget(parent)
 {
+  setVisible(false);
   setupUi(this);
 
   tagButtons_ = { tagPushButton0_, tagPushButton1_, tagPushButton2_,
@@ -63,16 +64,20 @@ TagManagerWindow::TagManagerWindow(QWidget* parent /* = 0 */) : QDockWidget(pare
   tagColors_.resize(NumberOfTags);
 
   connect(helpPushButton_, SIGNAL(clicked()), this, SLOT(helpButtonClicked()));
+  hide();
 }
 
 void TagManagerWindow::editTagColor()
 {
   auto tag = sender()->property(tagIndexProperty).toInt();
   auto color = QString::fromStdString(tagColors_[tag]);
-  auto newColor = QColorDialog::getColor(color, this, "Choose tag " + QString::number(tag) + " color");
-  auto colorStr = colorToString(newColor);
-  qobject_cast<QPushButton*>(sender())->setStyleSheet("background-color : " + colorStr + ";");
-  tagColors_[tag] = colorStr.toStdString();
+  auto newColor = QColorDialog::getColor(stringToColor(color), this, "Choose tag " + QString::number(tag) + " color");
+  if (newColor.isValid())
+  {
+    auto colorStr = colorToString(newColor);
+    qobject_cast<QPushButton*>(sender())->setStyleSheet("background-color : " + colorStr + ";");
+    tagColors_[tag] = colorStr.toStdString();
+  }
 }
 
 void TagManagerWindow::setTagNames(const QVector<QString>& names)

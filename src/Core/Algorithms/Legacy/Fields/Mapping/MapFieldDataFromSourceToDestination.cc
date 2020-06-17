@@ -3,9 +3,8 @@
 
    The MIT License
 
-   Copyright (c) 2015 Scientific Computing and Imaging Institute,
+   Copyright (c) 2020 Scientific Computing and Imaging Institute,
    University of Utah.
-
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -25,6 +24,7 @@
    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
    DEALINGS IN THE SOFTWARE.
 */
+
 
 #include <Core/Algorithms/Legacy/Fields/Mapping/MapFieldDataFromSourceToDestination.h>
 #include <Core/Algorithms/Base/AlgorithmVariableNames.h>
@@ -60,7 +60,7 @@ MapFieldDataFromSourceToDestinationAlgo::MapFieldDataFromSourceToDestinationAlgo
   using namespace Parameters;
   addParameter(DefaultValue, 0.0);
   addParameter(MaxDistance, -1.0);
-  addOption(MappingMethod, "interpolateddata", "interpolateddata|closestdata|singledestination");
+  addOption(MappingMethod, "closestdata", "interpolateddata|closestdata|singledestination");
 }
 
 namespace detail
@@ -567,7 +567,7 @@ MapFieldDataFromSourceToDestinationAlgo::runImpl(FieldHandle source, FieldHandle
   algoP->maxdist_ = maxdist;
   algoP->algo_ = this;
 
-  auto task_i = [&algoP,this](int i) { algoP->parallel(i); };
+  auto task_i = [&algoP](int i) { algoP->parallel(i); };
   Parallel::RunTasks(task_i, np);
 
   CopyProperties(*destination, *output);

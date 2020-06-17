@@ -3,9 +3,8 @@
 #
 #  The MIT License
 #
-#  Copyright (c) 2015 Scientific Computing and Imaging Institute,
+#  Copyright (c) 2020 Scientific Computing and Imaging Institute,
 #  University of Utah.
-#
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -26,6 +25,7 @@
 #  DEALINGS IN THE SOFTWARE.
 #
 
+
 MESSAGE(STATUS "Configuring Submodules")
 
 find_package(Git QUIET)
@@ -43,32 +43,22 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/../.git")
     endif()
 endif()
 
-#if(NOT EXISTS "${PROJECT_SOURCE_DIR}/Externals/submodules/pybind11/CMakeLists.txt")
-    #message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-#endif()
-
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/Externals/submodules/googletest/CMakeLists.txt")
+IF(BUILD_TESTING OR TRAVIS_BUILD)
+  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/Externals/submodules/googletest/CMakeLists.txt")
     message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-endif()
-
-#IF(BUILD_WITH_PYTHON)
-#  SET(PYTHON_EXECUTABLE ${SCI_PYTHON_EXE})
-#  IF(WIN32)
-#    message(${SCI_PYTHON_LIBRARY_RELEASE})
-#    SET(PYTHON_LIBRARY ${SCI_PYTHON_LIBRARY_RELEASE})
-#  ENDIF()
-#  SET(PYBIND11_PYTHON_VERSION 3.4.3)
-#  ADD_SUBDIRECTORY(pybind11)
-#ENDIF()
-
-ADD_SUBDIRECTORY(googletest)
-
-IF(WITH_OSPRAY)
-  set(OSPRAY_TASKING_SYSTEM "TBB")
-  set(OSPRAY_ENABLE_TESTING OFF)
-  set(OSPRAY_SG_CHOMBO OFF)
-  set(OSPRAY_SG_OPENIMAGEIO OFF)
-  set(OSPRAY_SG_VTK OFF)
-  set(ISPC_EXECUTABLE ${Ispc_DIR}/ispc)
-  ADD_SUBDIRECTORY(ospray)
+  endif()
 ENDIF()
+
+IF(BUILD_TESTING OR TRAVIS_BUILD)
+  ADD_SUBDIRECTORY(googletest)
+ENDIF()
+
+#IF(WITH_OSPRAY)
+#  set(OSPRAY_TASKING_SYSTEM "TBB")
+#  set(OSPRAY_ENABLE_TESTING OFF)
+#  set(OSPRAY_SG_CHOMBO OFF)
+#  set(OSPRAY_SG_OPENIMAGEIO OFF)
+#  set(OSPRAY_SG_VTK OFF)
+#  set(ISPC_EXECUTABLE ${Ispc_DIR}/ispc)
+#  ADD_SUBDIRECTORY(ospray)
+#ENDIF()
