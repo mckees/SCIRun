@@ -33,7 +33,10 @@ foreach(lib ${SCI_BOOST_LIBRARY})
   if(CMAKE_GENERATOR MATCHES "Makefiles" AND CMAKE_BUILD_TYPE MATCHES "Debug")
     set(FULL_LIB_NAME "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}${lib}${DEBUG_POSTFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}")
   elseif(CMAKE_GENERATOR MATCHES "Makefiles")
-    set(FULL_LIB_NAME "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    # older way for Mac:
+    # set(FULL_LIB_NAME "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    # newer way for Mac (Intel only!):
+    set(FULL_LIB_NAME "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}${lib}-x64${CMAKE_STATIC_LIBRARY_SUFFIX}")
   else()
     if(${lib} MATCHES "boost_python-mt")
       if(WIN32)
