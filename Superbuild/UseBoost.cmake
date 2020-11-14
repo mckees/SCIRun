@@ -36,7 +36,11 @@ foreach(lib ${SCI_BOOST_LIBRARY})
     # older way for Mac:
     # set(FULL_LIB_NAME "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
     # newer way for Mac (Intel only!):
-    set(FULL_LIB_NAME "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}${lib}-x64${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    if(${lib} MATCHES "boost_python-mt")
+      set(FULL_LIB_NAME "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}boost_python27-mt-x64${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    elseif()
+      set(FULL_LIB_NAME "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}${lib}-x64${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    endif()
   else()
     if(${lib} MATCHES "boost_python-mt")
       if(WIN32)
@@ -51,10 +55,10 @@ foreach(lib ${SCI_BOOST_LIBRARY})
           set(FULL_LIB_NAME_DEBUG "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}boost_python3-mt${DEBUG_POSTFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}")
         endif()
       endif(WIN32)
-	else() # non-python libraries
-	  set(FULL_LIB_NAME_RELEASE "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-	  set(FULL_LIB_NAME_DEBUG "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}${lib}${DEBUG_POSTFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-	endif()
+	  else() # non-python libraries
+	    set(FULL_LIB_NAME_RELEASE "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}${lib}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+	    set(FULL_LIB_NAME_DEBUG "${SCI_BOOST_LIBRARY_DIR}/${boost_LIB_PREFIX}${lib}${DEBUG_POSTFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+	  endif()
   endif()
 
   message(STATUS "Configure Boost library ${lib}")
